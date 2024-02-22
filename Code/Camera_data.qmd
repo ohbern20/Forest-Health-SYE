@@ -1,0 +1,33 @@
+---
+title: "Camera Data"
+format: html
+---
+Ignore Cam data for now 
+
+
+Set things up
+```{r}
+rm(list = ls())
+library(here)
+library(ggplot2)
+library(dplyr)
+```
+
+Pull in data
+```{r}
+cam <- read.csv(here("Data", "north-country-wild-classifications.csv"), stringsAsFactors = TRUE)
+mammal <- read.csv(here("Data", "MammalMatrixExample.csv"), stringsAsFactors = TRUE)
+```
+
+Quick summary
+```{r}
+summary(cam)
+```
+There is a lot going on here. But I can see that each entry has it's own subject ID which is good. 
+
+```{r}
+summary(mammal)
+```
+I can see here the data is in "wide" format with each species identified having it's own column. I don't see any repeating/misspelled species. 
+
+

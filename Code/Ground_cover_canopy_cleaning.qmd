@@ -1,0 +1,147 @@
+---
+title: "Data Cleaning"
+author: "Olivia"
+format: html
+---
+
+Set things up
+```{r}
+rm(list = ls())
+library(here)
+library(ggplot2)
+library(dplyr)
+```
+
+Suck in the data
+```{r}
+canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"), stringsAsFactors = TRUE)
+```
+
+Get a summary of the data
+```{r}
+summary(canopy)
+```
+
+With an initial glance at the summary, I don't see any unusual values. The percents (for density and ground cover) don't go above 100/below 0.
+
+There are the correct number of forests and plots. Lat and Long look reasonable, no outliers. 
+
+R is recognizing our dates as dates, and all the dates look correct. 
+
+Now I'll take a closer look at the numberic variables. 
+
+1. Percent bare ground
+```{r}
+summary(canopy$Percent_bare)
+```
+
+```{r}
+ggplot(canopy, aes(Percent_bare))+
+     geom_histogram()+
+     labs(x = "Percent Bare Ground", y = "Number of Plots")+
+     theme_bw()
+```
+This looks reasonable. For analysis in the future, grouping this data by plot could be interesting. 
+
+
+2. Percent non_vascular
+```{r}
+summary(canopy$Percent_nonvascular)
+```
+
+```{r}
+ggplot(canopy, aes(Percent_nonvascular))+
+     geom_histogram()+
+     labs(x = "Percent Nonvascular Cover", y = "Number of Plots")+
+     theme_bw()
+```
+Looks ok, would be interesting to see which forest had the higher nonvascular cover. 
+
+
+3. Percent angiosperms
+```{r}
+summary(canopy$Percent_angiosperms)
+```
+
+```{r}
+ggplot(canopy, aes(Percent_angiosperms))+
+     geom_histogram()+
+     labs(x = "Percent Angiosperm Cover", y = "Number of Plots")+
+     theme_bw()
+```
+Looks fine. 
+
+4. Percent Ferns
+```{r}
+summary(canopy$Percent_ferns)
+```
+
+```{r}
+ggplot(canopy, aes(Percent_ferns))+
+     geom_histogram()+
+     labs(x = "Percent Fern Cover", y = "Number of Plots")+
+     theme_bw()
+```
+
+Ferns can be an indicator of forest health so seeing which forest had a lot of ferns could be interesting. 
+
+5. Canopy density over regen with densiometer method
+```{r}
+summary(canopy$Regen_densiometer)
+```
+```{r}
+ggplot(canopy, aes(Regen_densiometer))+
+     geom_histogram()+
+     labs(x = "Canopy Density Above Regen Plot", y = "Number of Measurements")+
+     theme_bw()
+```
+
+6. 
+```{r}
+summary(canopy$Regen_canopyapp)
+```
+
+```{r}
+ggplot(canopy, aes(Regen_canopyapp))+
+     geom_histogram()+
+     labs(x = "Canopy density over regen plot (CanopyApp)", y = "Number of Measurements")+
+     theme_bw()
+```
+
+Would be interesting to see if there is a statistically significant difference between these two different methods of measuring canopy density. 
+
+7. 
+```{r}
+summary(canopy$Densiometer)
+```
+
+```{r}
+ggplot(canopy, aes(Densiometer))+
+     geom_histogram()+
+     labs(x = "Canopy density over each quadrant (densiometer)", y = "Number of Measurements")+
+     theme_bw()
+```
+Would be interesting to group by plot/forest. 
+
+8. 
+```{r}
+summary(canopy$Canopyapp)
+```
+
+```{r}
+ggplot(canopy, aes(Canopyapp))+
+     geom_histogram()+
+     labs(x = "Canopy density over each quadrant (canopyapp)", y = "Number of Measurements")+
+     theme_bw()
+```
+
+9. 
+```{r}
+print(canopy$Herb_spp)
+```
+
+There is nothing in this initial run through of the data that makes me suspicious. Since I didn't change anything, no need to save a new data file. 
+
+
+Trying to commit
+

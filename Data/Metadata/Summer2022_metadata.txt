@@ -1,0 +1,60 @@
+Both of these datasets are comprised of data I collected in my summer 2022 research project 
+
+Regen_data_summer_22_metadata:
+
+Name: Who collected the data
+
+Date: The date the data were collected
+
+Forest: The forest where the data were collected
+
+Plot_num: The plot number (1-3) where the data were collected
+
+Plot_lat: The latitude of the center of the plot
+
+Plot_long: The longitude of the center of the plot
+
+Percent_clouds: The percent of clouds in the sky, determined by looking at sky and approximating
+
+Regen_species: The species of the regen (seedling or sapling) in the plot
+
+Regen_type: Whether that individual species of regen is a seedling (<1m in height) or sapling (DBH > 1m)
+
+Regen_count: The number of regen for each species and type found in the plot
+
+Site_description: General description of the plot - prominent tree species, weather, etc. 
+
+
+Ground_cover_canopy_density_summer22_metadata:
+
+Name: Who collected the data
+
+Date: The date the data were collected
+
+Forest: The forest where the data were collected
+
+Plot_num: The plot number (1-3) where the data were collected
+
+Plot_lat: The latitude of the center of the plot
+
+Plot_long: The longitude of the center of the plot
+
+Percent_bare: The percent of bare ground in the ground cover plot
+
+Percent_nonvascular: The percent of nonvascular plants in the ground cover plot
+
+Percent_ferns: The percent of ferns in the ground cover plot
+
+Percent_angiosperms: The percent of angiosperms in the ground cover plot
+
+Regen_densiometer: The canopy density above the regen plot measured with a densiometer facing N
+
+Regen_canopyapp: The canopy density above the regen plot measured with CanopyApp facing N
+
+Density_quadrant: The quadrant for each density reading (not associated with density readings above region plot) 
+
+Densiomer: The density reading for a specific quadrant using the densiometer, taken facing N
+
+Canopyapp: The density reading for a specific quadrant using CanopyApp, taken facing N
+
+Herb_spp: All the herbaceous species present in the ground cover plot 

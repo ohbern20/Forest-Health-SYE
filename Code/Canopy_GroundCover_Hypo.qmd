@@ -1,0 +1,96 @@
+---
+title: "Canopy Openness and Herbaceous Ground Cover Hypo"
+format: html
+---
+
+Hypothesis: As canopy openness increases, ground cover will also increase
+(As canopy density increases, percent bare ground will increase)
+
+Set things up
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(here)
+```
+
+
+Pull in data
+```{r}
+gc_cd_df <- read.csv(here("Data/Ground_cover_canopy_density_summer22.csv"))
+```
+
+Workflow: 
+Import -> Tidy -> Visualize/Model/Transform cycle -> Communicate 
+
+The data I am working with have been imported and tidied in the 'Gound_cover_canopy_cleaning.qmd'
+
+Make Some Preliminary Plots
+```{r}
+#all canopy variables measure the percent of canopy cover (eg 80 = 80 percent of sky is blocked by canopy = less light gets to forest floor)
+#Regen_canopyapp = measure of canopy density above regen plots 
+ggplot(data = gc_cd_df, aes(x = Regen_canopyapp, y = Percent_bare)) +
+  geom_point()
+
+
+#Regen_densiometer = measure of canopy desnity above regen plots
+ggplot(data = gc_cd_df, aes(x = Regen_densiometer, y = Percent_bare)) +
+  geom_point()
+
+
+#Densiometer is a measure of canopy density not associated with a regen plot
+ggplot(data = gc_cd_df, aes(x = Densiometer, y = Percent_bare)) +
+  geom_point()
+
+
+#Canopyapp is a measure of canopy density not associated with a regen plot
+ggplot(data = gc_cd_df, aes(x = Canopyapp, y = Percent_bare)) +
+  geom_point()
+
+#it appears that there are similar trends between the different types of canopy measurements
+```
+
+
+Generate a Model 
+```{r}
+#first I will use a canopy measurement associated with a regen plot
+mod1 <- lm(Regen_canopyapp ~ Percent_bare, data = gc_cd_df)
+summary(mod1)
+
+
+#and now I will make a model using a canopy measuremnet unassociated with a regen plot
+mod2 <- lm(Densiometer ~ Percent_bare, data = gc_cd_df)
+summary(mod2)
+```
+
+Both models produced statistically significant p-values. 
+
+What if I found a mean canopy density (averaged from all canopy density measurements) for each plot and compared it to the mean bare ground for each plot. 
+```{r}
+mean_bare <- gc_cd_df |> 
+  group_by(Forest, Plot_num) |>
+  summarise(mean_cover = mean(Percent_bare),
+            mean_canopy = mean(Densiometer))
+
+```
+
+And then ran a test comparing the means
+```{r}
+mod3 <- lm(mean_canopy ~ mean_cover, data = mean_bare)
+summary(mod3)
+```
+
+
+Make a pretty graph
+```{r}
+ggplot(data = mean_bare, aes(x = mean_canopy, y = mean_cover)) +
+  geom_point() +
+  theme_bw() +
+  labs(title = "Effect of Canopy Density on Ground Cover",
+       x = "Mean Canopy Density",
+       y = "Mean Bare Ground (%)")
+```
+
+
+
+
+

@@ -64,6 +64,10 @@ summary(mod2)
 
 Both models produced statistically significant p-values. 
 
+## Run correlation matrix: each row = plot, and then mean canopy density of canopyapp and mean canopy density using densiometer -> correlation should be high 
+
+
+
 What if I found a mean canopy density (averaged from all canopy density measurements) for each plot and compared it to the mean bare ground for each plot. 
 ```{r}
 mean_bare <- gc_cd_df |> 
@@ -83,11 +87,12 @@ summary(mod3)
 Make a pretty graph
 ```{r}
 ggplot(data = mean_bare, aes(x = mean_canopy, y = mean_cover)) +
-  geom_point() +
+  geom_point(aes(color = Forest)) +
   theme_bw() +
   labs(title = "Effect of Canopy Density on Ground Cover",
        x = "Mean Canopy Density",
-       y = "Mean Bare Ground (%)")
+       y = "Mean Bare Ground (%)") +
+  geom_smooth(method = "lm")
 ```
 
 

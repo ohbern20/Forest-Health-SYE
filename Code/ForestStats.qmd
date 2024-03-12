@@ -1,0 +1,74 @@
+---
+title: "General Forest Statistics"
+format: html
+---
+
+## Summary Stats Table 
+Make a table with summary statistics - avg canopy density, regen, tree density, for each plot 
+
+
+## Graph of tree coordinates
+```{r}
+library(tidyverse)
+library(here)
+
+trees <- read.csv(here("Data", "Cleaned", "trees_17_21_clean.csv"))
+```
+
+First, I'll filter to get only data from quadrant one, because we have coordinates of each tree in that quadrant
+```{r}
+plotting <- trees |>
+  filter(Quadrant == 1)
+```
+
+```{r}
+ggplot(data = plotting, aes(x = X_coord, y = Y_coord)) +
+  geom_point(aes(size = DBH_cm))
+
+#this shows the sizes of all trees from quadrant one. I want to made a new variable called size_class that groups DBHs into small, mediaum, and large size classes. Also, I want to make a plot with just trees from 2017, and one with just trees from 2021 to visualize growth. 
+```
+
+
+```{r}
+plotting <- plotting |>
+  mutate(size_class = case_when(DBH_cm >= 10 & DBH_cm < 25 ~ "small",
+                                DBH_cm >= 25 & DBH_cm < 40 ~ "mediuam",
+                                DBH_cm >= 40 ~ "large"))
+
+
+ggplot(data = plotting, aes(x = X_coord, y = Y_coord)) +
+  geom_point(aes(size = size_class)) +
+  facet_wrap(~Year)
+#these graphs shows all the trees, but using size_class rather than DBH itself
+```
+
+
+Could also make separate plots for the two years.
+```{r}
+plotting_17 <- plotting |>
+  filter(Year == 2017)
+
+ggplot(data = plotting_17, aes(x = X_coord, y = Y_coord)) +
+  geom_point(aes(size = size_class))
+
+plotting_21 <- plotting |>
+  filter(Year == 2021)
+
+ggplot(data = plotting_21, aes(x = X_coord, y = Y_coord)) +
+  geom_point(aes(color = size_class, size = size_class))
+#might be easier to differentiate if we also color by size_class in addition to using size? 
+```
+
+
+Make a graph of tree coordinates, making size of point correlated to DBH (can make new variable that classifies DBH into small, med, large based on size classes) and use that new variable to graph size of points 
+
+Can run ANOVA for mean dbh between forests/plots  
+
+
+
+
+
+
+
+
+

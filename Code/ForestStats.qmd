@@ -7,7 +7,39 @@ format: html
 Make a table with summary statistics - avg canopy density, regen, tree density, for each plot 
 
 
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(here)
+
+Canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"))
+Regen <- read.csv(here("Data", "Regen_data_summer22.csv"))
+Metadata <- read.csv(here("Data", "Metadata", "Metadata_summer_22.csv"))
+```
+
+Now I want to merge these dataframes so I can use info from both to make a table 
+```{r}
+df_merge <- merge(Canopy, Regen, by = "Forest") 
+```
+
+
+Filter and summarize data to get what we want
+```{r}
+table1 <- df_merge |>
+  group_by(Forest, Plot_num.x) |>
+  summarise(Mean_CanopyDens = mean(Densiometer),
+            Regen_count = sum(Regen_count),
+            Tree_density = )
+ #hmm how do i calulate tree density?  
+```
+
+
+
+ 
 ## Graph of tree coordinates
+
+Make a graph of tree coordinates, making size of point correlated to DBH (can make new variable that classifies DBH into small, med, large based on size classes) and use that new variable to graph size of points
+
 ```{r}
 library(tidyverse)
 library(here)
@@ -30,23 +62,25 @@ ggplot(data = plotting, aes(x = X_coord, y = Y_coord)) +
 
 
 ```{r}
-plotting <- plotting |>
+one_plot <- plotting |>
   mutate(size_class = case_when(DBH_cm >= 10 & DBH_cm < 25 ~ "small",
                                 DBH_cm >= 25 & DBH_cm < 40 ~ "mediuam",
-                                DBH_cm >= 40 ~ "large"))
+                                DBH_cm >= 40 ~ "large")) |>
+  filter(Forest == "South Hammond",
+         PlotNum == 1)
 
 
-ggplot(data = plotting, aes(x = X_coord, y = Y_coord)) +
+ggplot(data = one_plot, aes(x = X_coord, y = Y_coord)) +
   geom_point(aes(size = size_class)) +
   facet_wrap(~Year)
-#these graphs shows all the trees, but using size_class rather than DBH itself
+#these graphs shows all the trees, but using size_class rather than DBH itself 
 ```
 
 
-Could also make separate plots for the two years.
+Could also make separate plots for the two years, for one forest plot 
 ```{r}
 plotting_17 <- plotting |>
-  filter(Year == 2017)
+  filter(Year == 2017) 
 
 ggplot(data = plotting_17, aes(x = X_coord, y = Y_coord)) +
   geom_point(aes(size = size_class))
@@ -55,17 +89,40 @@ plotting_21 <- plotting |>
   filter(Year == 2021)
 
 ggplot(data = plotting_21, aes(x = X_coord, y = Y_coord)) +
-  geom_point(aes(color = size_class, size = size_class))
+  geom_point(aes(color = size_class, size = size_class)) +
+  labs(x = "X Coordinate",
+       y = "Y Coordinate",
+       title = "Distribution of Trees in a 10x10 m Plot")
+
+
 #might be easier to differentiate if we also color by size_class in addition to using size? 
 ```
 
+Could also make a histogram of size classes
+```{r}
+ggplot(data = plotting, aes(x = DBH_cm)) +
+  geom_histogram() +
+  geom_vline(xintercept = 20) +
+  geom_vline(xintercept = 40) +
+  geom_vline(xintercept = 60)
 
-Make a graph of tree coordinates, making size of point correlated to DBH (can make new variable that classifies DBH into small, med, large based on size classes) and use that new variable to graph size of points 
-
-Can run ANOVA for mean dbh between forests/plots  
-
+#does it make sense to have vertical lines to break the graph into small, medium, and large dbh size classes? Need to figure out how to lable the lines if I keep them 
+```
 
 
+
+
+
+
+
+
+
+
+
+
+## ANOVA for mean DBH 
+
+Can run ANOVA for mean dbh between forests/plots 
 
 
 

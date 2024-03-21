@@ -15,8 +15,57 @@ library(here)
 Canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"))
 Regen <- read.csv(here("Data", "Regen_data_summer22.csv"))
 Metadata <- read.csv(here("Data", "Metadata", "Metadata_summer_22.csv"))
+full_2021 <- read.csv(here("Data", "Forest_Trees_and_Regen_2021.csv"), stringsAsFactors = TRUE)
+
+
+summary(full_2021)
 ```
 
+
+## Find tree and seedling/sapling density averages for each plot/forest
+
+If I'm remembering correctly (and based on what it looks like in the df), we recorded tree species and dbh for each tree in the plot, no matter the quadrant (however, we only recorded the x and y coordinates in quadrant 1). 
+
+We also conducted regeneration plots in quadrants 2, 3, and 4 for each forest plot. 
+
+
+Now, using the full_2021 dataframe, I am going to find mean tree density for each forest
+```{r}
+tree_dens <- full_2021 |> 
+  filter(Type == "Tree") |>
+  group_by(Forest, Plot) |>
+  summarise(num_trees = n()) |>
+  group_by(Forest) |>
+  summarise(Mean_tree_density = sum(num_trees/3))
+
+#20 x 20 m plots = 400m squared = 0.04 ha. So, num_trees x 25 = density of trees per ha. Not sure if we need this informaiton? But from what I've read it seems like tree density is usaully reported in trees/ha. (mutate(dens_ha = (num_trees*25)) |>)
+```
+
+Now, using the full_2021 dataframe, I am going to find mean seedling/sapling density for each forest
+```{r}
+regen_dens <- full_2021 |> 
+  filter(Type == "Sapling" | Type == "Seedling") |>
+  group_by(Forest, Plot) |>
+  summarise(num_regen = n()) |>
+  group_by(Forest) |>
+  summarise(Mean_regen_density = sum(num_regen/3))
+```
+
+
+
+Now, using the full_2021 dataframe, I am going to find mean seedling/sapling density for each plot
+```{r}
+regen_dens <- full_2021 |> 
+  filter(Type == "Sapling" | Type == "Seedling") |>
+  group_by(Forest, Plot) |>
+  summarise(num_regen = n()) |>
+  group_by(Forest) |>
+  summarise(Mean_regen_density = sum(num_regen/3))
+```
+
+
+
+## Messing around with merging 
 Now I want to merge these dataframes so I can use info from both to make a table 
 ```{r}
 df_merge <- merge(Canopy, Regen, by = "Forest") 
@@ -28,8 +77,12 @@ Filter and summarize data to get what we want
 table1 <- df_merge |>
   group_by(Forest, Plot_num.x) |>
   summarise(Mean_CanopyDens = mean(Densiometer),
-            Regen_count = sum(Regen_count),
-            Tree_density = )
+            Regen_count = sum(Regen_count))
+
+
+Tree_density = ?
+
+
  #hmm how do i calulate tree density?  
 ```
 
@@ -74,6 +127,7 @@ ggplot(data = one_plot, aes(x = X_coord, y = Y_coord)) +
   geom_point(aes(size = size_class)) +
   facet_wrap(~Year)
 #these graphs shows all the trees, but using size_class rather than DBH itself 
+#need to fct_recode so that size of dots are correlated to size (large tree = large points)
 ```
 
 
@@ -85,11 +139,11 @@ plotting_17 <- plotting |>
 ggplot(data = plotting_17, aes(x = X_coord, y = Y_coord)) +
   geom_point(aes(size = size_class))
 
-plotting_21 <- plotting |>
+plotting_21 <- one_plot |>
   filter(Year == 2021)
 
 ggplot(data = plotting_21, aes(x = X_coord, y = Y_coord)) +
-  geom_point(aes(color = size_class, size = size_class)) +
+  geom_point(aes(color = Common_name, size = size_class)) +
   labs(x = "X Coordinate",
        y = "Y Coordinate",
        title = "Distribution of Trees in a 10x10 m Plot")
@@ -110,6 +164,11 @@ ggplot(data = plotting, aes(x = DBH_cm)) +
 ```
 
 
+```{r}
+plotting_21_hammond <- one_plot |>
+  filter(Year == 2021 &
+           Forest == "South Hammond") 
+```
 
 
 

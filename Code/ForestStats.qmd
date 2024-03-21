@@ -191,6 +191,7 @@ Tree_density = ?
 Make a graph of tree coordinates, making size of point correlated to DBH (can make new variable that classifies DBH into small, med, large based on size classes) and use that new variable to graph size of points
 
 ```{r}
+rm(list = ls())
 library(tidyverse)
 library(here)
 
@@ -219,6 +220,10 @@ one_plot <- plotting |>
   filter(Forest == "South Hammond",
          PlotNum == 1)
 
+
+
+one_plot <- one_plot |>
+  mutate(ordered = fct_reorder(.f = size_class, .x = size_class))
 
 ggplot(data = one_plot, aes(x = X_coord, y = Y_coord)) +
   geom_point(aes(size = size_class)) +

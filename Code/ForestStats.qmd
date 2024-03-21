@@ -22,7 +22,7 @@ summary(full_2021)
 ```
 
 
-## Find tree and seedling/sapling density averages for each plot/forest
+### Find tree and seedling/sapling density averages for each plot/forest
 
 If I'm remembering correctly (and based on what it looks like in the df), we recorded tree species and dbh for each tree in the plot, no matter the quadrant (however, we only recorded the x and y coordinates in quadrant 1). 
 
@@ -55,13 +55,110 @@ regen_dens <- full_2021 |>
 
 Now, using the full_2021 dataframe, I am going to find mean seedling/sapling density for each plot
 ```{r}
-regen_dens <- full_2021 |> 
+regen_dens_plot <- full_2021 |> 
   filter(Type == "Sapling" | Type == "Seedling") |>
-  group_by(Forest, Plot) |>
+  group_by(Forest, Plot, Quadrant) |>
   summarise(num_regen = n()) |>
-  group_by(Forest) |>
+  group_by(Forest, Plot) |>
   summarise(Mean_regen_density = sum(num_regen/3))
 ```
+
+Next, I want to combine the dataframes I made above for mean tree and regen density per forest to begin making a summary table
+```{r}
+merged_density <- merge(regen_dens, tree_dens, by = "Forest") 
+
+#for the summary tables, I think it makes sense to display them by average blah blah blah per forest rather than broken down by plot, because if we do it by plot the sample size would be smaller? 
+```
+
+### Find mean canopy density and mean % ground cover averaged for each forest
+
+Load the data 
+```{r}
+Canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"))
+```
+
+Next, determine if there is a difference between the methods of measuring canopy density
+```{r}
+one.way <- aov(Canopyapp ~ Densiometer, data = Canopy)
+
+summary(one.way)
+
+#I feel like this isn't right, but I'm not sure. I'll just choose one method for now so I can keep working 
+```
+
+
+
+Now, I will find the mean canopy density for each plot, and then the mean canopy density for each forest using the Canopyapp method
+```{r}
+canopy_dens <- Canopy |>
+  group_by(Forest, Plot_num) |>
+  summarise(plot_dens = sum(Canopyapp/4))
+
+#now, I will find the canopy density for each forest
+canopy_dens <- canopy_dens |>
+  group_by(Forest) |>
+  summarise(Mean_canopy_dens = sum(plot_dens/3))
+```
+
+
+Now, I will find the mean percent ground cover for each forest (I only did one cover plot per forest plot)
+```{r}
+mean_cover <- Canopy |>
+  mutate(Total_cover = (100 - Percent_bare)) |>
+  group_by(Forest) |>
+  summarise(Mean_ground_cover = sum(Total_cover/12))
+
+#it's devided by 12 because the value is repeating 4 times for each forest plot because there are other data in the data frame that are broken up by quadrant
+```
+
+Now I will merge the ground cover and canopy density data frames
+```{r}
+merged_canopy_ground <- merge(mean_cover, canopy_dens, by = "Forest") 
+```
+
+### Merge the tables I created to form a bigger summary table
+
+```{r}
+summary_table <- merge(merged_canopy_ground, merged_density, by = "Forest")
+#having an issue here because Kip is spelled two different ways so it is being left out of the merged dataframe, and black ash stand is only in one df so it is also being left out. I'm going to try to join the dataframe instead
+```
+
+First, I will rename one of the Kips
+```{r}
+merged_density <- merged_density |>
+  mutate(Forest = as.character(Forest)) |>
+  mutate(Forest = replace(Forest, Forest == 'Kip tract', 'Kip')) 
+```
+
+
+
+I'm going to do a full join because I want to keep all the observations that occur in both dataframes 
+```{r}
+summary_table <- full_join(merged_density, merged_canopy_ground, by = join_by(Forest == Forest)) 
+
+#I think for now I will remove the black ash stand row 
+
+summary_table <- summary_table |>
+  filter(!Forest == "Black ash stand")
+```
+
+Now I want to save this dataframe as a table 
+```{r}
+library(knitr)
+
+table <- summary_table |>
+  kable()
+
+table
+```
+
+```{r}
+ggsave(here())
+
+#not sure if this will work? 
+```
+
+
 
 
 

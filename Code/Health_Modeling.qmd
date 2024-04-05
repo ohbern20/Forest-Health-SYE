@@ -166,15 +166,118 @@ merged_dens <- merge(merged_canopy_ground, regen_dens, by = "Forest")
 
 Now, I need to add Shannon Index to merged_dens
 ```{r}
+#first, I will rename Kip in Tree_Div 
+Tree_Div <- Tree_Div |>
+  mutate(Forest = as.character(Forest)) |>
+  mutate(Forest = replace(Forest, Forest == 'Kip tract', 'Kip'))
 
+
+for_modeling <- merge(merged_dens, Tree_Div, by = "Forest")
 ```
 
 
+Now, using for_modeling, I will attempt to create a model to predict forest health (with Shannon Div as a proxy) based on other variables 
+- could add deer abundance later 
+```{r}
+mod1 <- lm(meanShannon ~ Mean_canopy_dens + Mean_ground_cover + Mean_regen_density, data = for_modeling) 
 
+summary(mod1)
+```
 
 ```{r}
-mod1 <- lm(shannon ~ canopy_dens + regen_dens, data = DF)  
+mod2 <- lm(meanShannon ~ Mean_canopy_dens + Mean_ground_cover, data = for_modeling) 
+
+summary(mod2)
 ```
+
+```{r}
+mod3 <- lm(meanShannon ~ Mean_canopy_dens + Mean_regen_density, data = for_modeling) 
+
+summary(mod3)
+#this model seems fairly good, with a p-value of 0.065 and a Multiple R-Squared of 0.9349
+```
+
+```{r}
+mod4 <- lm(meanShannon ~ Mean_ground_cover + Mean_regen_density, data = for_modeling) 
+
+summary(mod4)
+```
+
+Out of the models I looked at to predict Shannon, Mod3 did the best job. It had the lowest p-value, and still had a high R-squared. 
+
+## Calculate Sapling/seedling Diversity  
+
+Create New DF
+```{r}
+SapDiv <- DF %>%
+  filter(Type == "Seedling" | Type == "Sapling") 
+
+#calculate species richness
+SapSR <- length(unique(SapDiv$sci_name))
+
+#Now get a summary of the number of sapling per species per plot
+SapDiv <- SapDiv %>% group_by(Forest, Plot, sci_name) %>% summarize(num_saps = length(sci_name))
+
+
+#have the info we need, now transpose it to fit vegan
+SapDiv <- SapDiv %>%
+  relocate(sci_name, .before = Forest) 
+
+
+#now I will pivot the datatable
+SapDiv <- SapDiv %>%
+  pivot_wider(names_from = sci_name, values_from = num_saps)
+
+#now I will fill in NAs with zeros
+SapDiv[is.na(SapDiv)]<-0
+```
+
+
+Now I will use the TreeDiv data frame to calculate the following for each of the 5 forests:
+a. Average ± standard deviation of species richness of trees (from N = 3 plots)
+```{r}
+numspec <- specnumber(SapDiv)
+```
+
+b. Average ± standard deviation of Shannon index (H') of trees (from N = 3 plots)
+```{r}
+shannon_sap <- diversity(SapDiv[,3:23], index = "shannon")
+```
+
+c. Average ± standard deviation of Simpson's index (1/Ds, i.e., use index = “invsimpson”) of trees (from N = 3 plots)
+```{r}
+simpson_sap <- diversity(SapDiv[,3:23], index = "invsimpson")
+```
+
+
+I will build a dataframe that allows me to compare the diversity values between forests. 
+```{r}
+Tree_Diversity <- data.frame(Forest = character(15),
+                         Plot = numeric(15),
+               Simpson = numeric(15),
+               Shannon = numeric(15),
+               SR = numeric(15))
+
+Tree_Diversity$Forest <- TreeDiv$Forest
+Tree_Diversity$Plot <- TreeDiv$Plot
+Tree_Diversity$Simpson <- simpson_sap
+Tree_Diversity$Shannon <- shannon_sap
+Tree_Diversity$SR <- numspec
+```
+
+Summarize Tree_Diversity
+```{r}
+Tree_Div <- Tree_Diversity %>% group_by(Forest) %>%
+  summarize(meanSimpson = mean(Simpson),
+            seSimpson = sd(Simpson)/sqrt(sum(!is.na(Simpson))),
+            meanShannon = mean(Shannon),
+            seShannon = sd(Shannon)/sqrt(sum(!is.na(Shannon))),
+            meanSR = mean(SR),
+            seSR = sd(SR)/sqrt(sum(!is.na(SR))))
+
+#based on Shannon Index, South Hammond is the most divese forest, and Degrasse is the least diverse 
+```
+
 
 
 

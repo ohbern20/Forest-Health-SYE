@@ -87,12 +87,13 @@ summary(mod3)
 Make a pretty graph
 ```{r}
 ggplot(data = mean_bare, aes(x = mean_canopy, y = mean_cover)) +
-  geom_point(aes(color = Forest)) +
+  geom_point(aes(color = Forest, shape = Forest), size = 2) +
   theme_bw() +
   labs(title = "Effect of Canopy Density on Ground Cover",
        x = "Mean Canopy Density",
        y = "Mean Bare Ground (%)") +
-  geom_smooth(method = "lm")
+  geom_smooth(method = "lm") +
+scale_color_viridis_d()
 ```
 
 

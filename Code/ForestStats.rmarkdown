@@ -3,8 +3,10 @@ title: "General Forest Statistics"
 format: html
 ---
 
+
 ## Summary Stats Table 
 Make a table with summary statistics - avg canopy density, regen, tree density, for each plot 
+
 
 
 ```{r}
@@ -22,6 +24,7 @@ summary(full_2021)
 ```
 
 
+
 ### Find tree and seedling/sapling density averages for each plot/forest
 
 - Regen density: find mean and sd per PLOT, and then use those numbers to find the means and sd across forests. 
@@ -32,19 +35,21 @@ We also conducted regeneration plots in quadrants 2, 3, and 4 for each forest pl
 
 
 Now, using the full_2021 dataframe, I am going to find mean tree density for each forest
+
 ```{r}
 tree_dens <- full_2021 |> 
   filter(Type == "Tree") |>
   group_by(Forest, Plot) |>
   summarise(num_trees = n()) |>
   group_by(Forest) |>
-  summarise(Mean_tree_density = sum(num_trees/3),
-            SD_trees = sd(num_trees))
+  summarise(Mean_tree_density = sum(num_trees/3))
 
 #20 x 20 m plots = 400m squared = 0.04 ha. So, num_trees x 25 = density of trees per ha. Not sure if we need this informaiton? But from what I've read it seems like tree density is usaully reported in trees/ha. (mutate(dens_ha = (num_trees*25)) |>)
 ```
 
+
 Now, using the full_2021 dataframe, I am going to find mean seedling/sapling density for each forest
+
 ```{r}
 #for 2021
 regen_dens <- full_2021 |> 
@@ -52,10 +57,7 @@ regen_dens <- full_2021 |>
   group_by(Forest, Plot) |>
   summarise(num_regen = n()) |>
   group_by(Forest) |>
-  summarise(Mean_regen_density = sum(num_regen/9),
-            SD_regen = sd(num_regen))
-
-#should this be divided by 3 or 9? 
+  summarise(Mean_regen_density = sum(num_regen/9))
 
 
 
@@ -63,39 +65,39 @@ regen_dens <- full_2021 |>
 #for 2022
 regen_dens_22 <- Regen |> 
   group_by(Forest, Plot_num) |>
-  summarise(num_regen = sum(Regen_count)) |>
+  summarise(num_regen = n()) |>
   group_by(Forest) |>
-  summarise(Mean_regen_density = sum(num_regen/3),
-            SD_regen = sd(num_regen))
+  summarise(Mean_regen_density = sum(num_regen/3))
 
 
 ```
 
 
 
+
 Now, using the full_2021 dataframe, I am going to find mean seedling/sapling density for each plot
+
 ```{r}
 regen_dens_plot <- full_2021 |> 
   filter(Type == "Sapling" | Type == "Seedling") |>
   group_by(Forest, Plot, Quadrant) |>
   summarise(num_regen = n()) |>
   group_by(Forest, Plot) |>
-  summarise(Mean_regen_density = sum(num_regen/3),
-            SD_regen = sd(num_regen))
+  summarise(Mean_regen_density = sum(num_regen/3))
 ```
 
+
 Next, I want to combine the dataframes I made above for mean tree and regen density per forest to begin making a summary table
+
 ```{r}
 merged_density <- merge(regen_dens, tree_dens, by = "Forest") 
-
-library(tidyverse)
-
-density_table <- full_join(tree_dens, regen_dens_plot, by = c("Forest", "Plot"))
 
 #for the summary tables, I think it makes sense to display them by average blah blah blah per forest rather than broken down by plot, because if we do it by plot the sample size would be smaller? 
 ```
 
+
 ## Mean regen density PER PLOT (per forest)
+
 
 ```{r}
 #for 2021
@@ -104,11 +106,11 @@ regen_dens_plot <- full_2021 |>
   group_by(Forest, Plot, Quadrant) |>
   summarise(num_regen = n()) |>
   group_by(Forest, Plot) |>
-  summarise(Mean_regen_density = sum(num_regen/3),
-            SD_regen = sd(num_regen))
+  summarise(Mean_regen_density = sum(num_regen/3))
 
 
 ```
+
 
 
 
@@ -117,11 +119,14 @@ regen_dens_plot <- full_2021 |>
 ### Find mean canopy density and mean % ground cover averaged for each forest
 
 Load the data 
+
 ```{r}
 Canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"))
 ```
 
+
 Next, determine if there is a difference between the methods of measuring canopy density
+
 ```{r}
 one.way <- aov(Canopyapp ~ Densiometer, data = Canopy)
 
@@ -132,7 +137,9 @@ summary(one.way)
 
 
 
+
 Now, I will find the mean canopy density for each plot, and then the mean canopy density for each forest using the Canopyapp method
+
 ```{r}
 canopy_dens <- Canopy |>
   group_by(Forest, Plot_num) |>
@@ -141,35 +148,41 @@ canopy_dens <- Canopy |>
 #now, I will find the canopy density for each forest
 canopy_dens <- canopy_dens |>
   group_by(Forest) |>
-  summarise(Mean_canopy_dens = sum(plot_dens/3),
-            SD_canopy_dens = sd(plot_dens))
+  summarise(Mean_canopy_dens = sum(plot_dens/3))
 ```
 
 
+
 Now, I will find the mean percent ground cover for each forest (I only did one cover plot per forest plot)
+
 ```{r}
 mean_cover <- Canopy |>
   mutate(Total_cover = (100 - Percent_bare)) |>
   group_by(Forest) |>
-  summarise(Mean_ground_cover = sum(Total_cover/12),
-            SD_cover = sd(Total_cover))
+  summarise(Mean_ground_cover = sum(Total_cover/12))
 
 #it's devided by 12 because the value is repeating 4 times for each forest plot because there are other data in the data frame that are broken up by quadrant
 ```
 
+
 Now I will merge the ground cover and canopy density data frames
+
 ```{r}
 merged_canopy_ground <- merge(mean_cover, canopy_dens, by = "Forest") 
 ```
 
+
 ### Merge the tables I created to form a bigger summary table
+
 
 ```{r}
 summary_table <- merge(merged_canopy_ground, merged_density, by = "Forest")
 #having an issue here because Kip is spelled two different ways so it is being left out of the merged dataframe, and black ash stand is only in one df so it is also being left out. I'm going to try to join the dataframe instead
 ```
 
+
 First, I will rename one of the Kips
+
 ```{r}
 merged_density <- merged_density |>
   mutate(Forest = as.character(Forest)) |>
@@ -178,7 +191,9 @@ merged_density <- merged_density |>
 
 
 
+
 I'm going to do a full join because I want to keep all the observations that occur in both dataframes 
+
 ```{r}
 summary_table <- full_join(merged_density, merged_canopy_ground, by = join_by(Forest == Forest)) 
 
@@ -188,7 +203,9 @@ summary_table <- summary_table |>
   filter(!Forest == "Black ash stand")
 ```
 
+
 Now I want to save this dataframe as a table 
+
 ```{r}
 library(knitr)
 
@@ -208,14 +225,18 @@ table
 
 
 
+
 ## Messing around with merging 
 Now I want to merge these dataframes so I can use info from both to make a table 
+
 ```{r}
 df_merge <- merge(Canopy, Regen, by = "Forest") 
 ```
 
 
+
 Filter and summarize data to get what we want
+
 ```{r}
 table1 <- df_merge |>
   group_by(Forest, Plot_num.x) |>
@@ -231,10 +252,12 @@ Tree_density = ?
 
 
 
+
  
 ## Graph of tree coordinates
 
 Make a graph of tree coordinates, making size of point correlated to DBH (can make new variable that classifies DBH into small, med, large based on size classes) and use that new variable to graph size of points
+
 
 ```{r}
 rm(list = ls())
@@ -244,7 +267,9 @@ library(here)
 trees <- read.csv(here("Data", "Cleaned", "trees_17_21_clean.csv"))
 ```
 
+
 First, I'll filter to get only data from quadrant one, because we have coordinates of each tree in that quadrant
+
 ```{r}
 plotting <- trees |>
   filter(Quadrant == 1)
@@ -256,7 +281,6 @@ ggplot(data = plotting, aes(x = X_coord, y = Y_coord)) +
 
 #this shows the sizes of all trees from quadrant one. I want to made a new variable called size_class that groups DBHs into small, mediaum, and large size classes. Also, I want to make a plot with just trees from 2017, and one with just trees from 2021 to visualize growth. 
 ```
-
 
 ```{r}
 one_plot <- plotting |>
@@ -279,7 +303,9 @@ ggplot(data = one_plot, aes(x = X_coord, y = Y_coord)) +
 ```
 
 
+
 Could also make separate plots for the two years, for one forest plot 
+
 ```{r}
 plotting_17 <- plotting |>
   filter(Year == 2017) 
@@ -300,7 +326,9 @@ ggplot(data = plotting_21, aes(x = X_coord, y = Y_coord)) +
 #might be easier to differentiate if we also color by size_class in addition to using size? 
 ```
 
+
 Could also make a histogram of size classes
+
 ```{r}
 ggplot(data = plotting, aes(x = DBH_cm)) +
   geom_histogram() +
@@ -310,7 +338,6 @@ ggplot(data = plotting, aes(x = DBH_cm)) +
 
 #does it make sense to have vertical lines to break the graph into small, medium, and large dbh size classes? Need to figure out how to lable the lines if I keep them 
 ```
-
 
 ```{r}
 plotting_21_hammond <- one_plot |>
@@ -327,9 +354,11 @@ plotting_21_hammond <- one_plot |>
 
 
 
+
 ## ANOVA for mean DBH 
 
 Can run ANOVA for mean dbh between forests/plots 
+
 
 
 

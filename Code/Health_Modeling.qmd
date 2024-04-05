@@ -1,0 +1,181 @@
+---
+title: "Healt hModeling"
+format: html
+---
+
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(here)
+library(vegan)
+library(ggfortify)
+library(ggvegan)
+library(ggrepel)
+library(ggpubr)
+
+
+DF <- read.csv(here("Data", "Forest_Trees_and_Regen_2021.csv"), stringsAsFactors = TRUE)
+```
+
+## Calculate Tree Diversity Indices 
+```{r}
+unique(DF$sci_name)
+length(unique(DF$sci_name))
+#can see there are 31 species
+#need to remove NAs
+```
+
+Remove NAs
+```{r}
+DF <- DF[-which(is.na(DF$sci_name)), ]
+DF <- DF[-which(DF$sci_name == ""), ]
+
+unique(DF$sci_name)
+length(unique(DF$sci_name))
+```
+
+Create New DF
+```{r}
+TreeDiv <- DF %>%
+  filter(Type == "Tree") 
+
+#calculate species richness
+TreesSR <- length(unique(TreeDiv$sci_name))
+
+#Now get a summary of the number of trees per species per plot
+TreeDiv <- TreeDiv %>% group_by(Forest, Plot, sci_name) %>% summarize(num_trees = length(sci_name))
+
+
+#have the info we need, now transpose it to fit vegan
+TreeDiv <- TreeDiv %>%
+  relocate(sci_name, .before = Forest) 
+
+
+#now I will pivot the datatable
+TreeDiv <- TreeDiv %>%
+  pivot_wider(names_from = sci_name, values_from = num_trees)
+
+#now I will fill in NAs with zeros
+TreeDiv[is.na(TreeDiv)]<-0
+```
+
+
+Now I will use the TreeDiv data frame to calculate the following for each of the 5 forests:
+a. Average ± standard deviation of species richness of trees (from N = 3 plots)
+```{r}
+numspec <- specnumber(TreeDiv)
+```
+
+b. Average ± standard deviation of Shannon index (H') of trees (from N = 3 plots)
+```{r}
+shannon <- diversity(TreeDiv[,3:23], index = "shannon")
+```
+
+c. Average ± standard deviation of Simpson's index (1/Ds, i.e., use index = “invsimpson”) of trees (from N = 3 plots)
+```{r}
+simpson <- diversity(TreeDiv[,3:23], index = "invsimpson")
+```
+
+
+I will build a dataframe that allows me to compare the diversity values between forests. 
+```{r}
+Tree_Diversity <- data.frame(Forest = character(15),
+                         Plot = numeric(15),
+               Simpson = numeric(15),
+               Shannon = numeric(15),
+               SR = numeric(15))
+
+Tree_Diversity$Forest <- TreeDiv$Forest
+Tree_Diversity$Plot <- TreeDiv$Plot
+Tree_Diversity$Simpson <- simpson
+Tree_Diversity$Shannon <- shannon
+Tree_Diversity$SR <- numspec
+```
+
+Summarize Tree_Diversity
+```{r}
+Tree_Div <- Tree_Diversity %>% group_by(Forest) %>%
+  summarize(meanSimpson = mean(Simpson),
+            seSimpson = sd(Simpson)/sqrt(sum(!is.na(Simpson))),
+            meanShannon = mean(Shannon),
+            seShannon = sd(Shannon)/sqrt(sum(!is.na(Shannon))),
+            meanSR = mean(SR),
+            seSR = sd(SR)/sqrt(sum(!is.na(SR))))
+
+#based on Shannon Index, South Hammond is the most divese forest, and Degrasse is the least diverse 
+```
+
+## Model Tree Diversity Using Shannon Index
+
+First, I need a dataframe that contains Shannon Index and the other potential variables I want as predictors.
+```{r}
+Canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"))
+Regen <- read.csv(here("Data", "Regen_data_summer22.csv"))
+```
+
+Now, I will find the mean canopy density for each plot, and then the mean canopy density for each forest using the Canopyapp method
+```{r}
+canopy_dens <- Canopy |>
+  group_by(Forest, Plot_num) |>
+  summarise(plot_dens = sum(Canopyapp/4))
+
+#now, I will find the canopy density for each forest
+canopy_dens <- canopy_dens |>
+  group_by(Forest) |>
+  summarise(Mean_canopy_dens = sum(plot_dens/3),
+            SD_canopy_dens = sd(plot_dens))
+```
+
+
+Now, I will find the mean percent ground cover for each forest (I only did one cover plot per forest plot)
+```{r}
+mean_cover <- Canopy |>
+  mutate(Total_cover = (100 - Percent_bare)) |>
+  group_by(Forest) |>
+  summarise(Mean_ground_cover = sum(Total_cover/12),
+            SD_cover = sd(Total_cover))
+```
+
+Merge Canopy Density and Ground Cover DFs
+```{r}
+merged_canopy_ground <- merge(mean_cover, canopy_dens, by = "Forest") 
+```
+
+Now, find Mean Regen Density
+```{r}
+regen_dens <- DF |> 
+  filter(Type == "Sapling" | Type == "Seedling") |>
+  group_by(Forest, Plot) |>
+  summarise(num_regen = n()) |>
+  group_by(Forest) |>
+  summarise(Mean_regen_density = sum(num_regen/9),
+            SD_regen = sd(num_regen))
+
+#this gives regen density per quadrant (I believe we counted regen in three quadrants per plot) (which is 1m squared?)
+
+#now I'm going to rename Kip Tract to Kip 
+regen_dens <- regen_dens |>
+  mutate(Forest = as.character(Forest)) |>
+  mutate(Forest = replace(Forest, Forest == 'Kip tract', 'Kip'))
+```
+
+Now, merge regen_dens with DF from above
+```{r}
+merged_dens <- merge(merged_canopy_ground, regen_dens, by = "Forest") 
+```
+
+Now, I need to add Shannon Index to merged_dens
+```{r}
+
+```
+
+
+
+
+```{r}
+mod1 <- lm(shannon ~ canopy_dens + regen_dens, data = DF)  
+```
+
+
+
+

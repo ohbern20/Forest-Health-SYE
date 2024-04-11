@@ -180,29 +180,60 @@ for_modeling <- full_join(regen_can_ground, Tree_Diversity, join_by(Forest, Plot
 ```
 
 
+Print a correlation matrix
+```{r}
+for_matrix <- for_modeling |> select (-c(Forest, Plot_num))
+cor_matrix <- cor(for_matrix)
+round(cor_matrix, 3)
+
+#can see that SR and Shannon are HIGHLY correlated, so will not include in model. Will also not use Simpson. 
+```
+
+
+Run a best subsets
+```{r}
+library(leaps)
+library(here)
+source(here("ShowSubsets.R"))
+
+subsets_mod <- regsubsets(Shannon ~  Mean_ground_cover + canopy_density + Mean_regen_density, data = for_modeling, method = "forward")
+
+ShowSubsets(subsets_mod)
+#canopy density looks like a good predictor
+```
+
+
+```{r}
+mod_canopy <- glm(Shannon ~ canopy_density, data = for_modeling)
+
+summary(mod_canopy)
+```
+
+
+
 Now, using for_modeling, I will attempt to create a model to predict forest health (with Shannon Div as a proxy) based on other variables 
 - could add deer abundance later 
 ```{r}
-mod1 <- lm(meanShannon ~ Mean_canopy_dens + Mean_ground_cover + Mean_regen_density, data = for_modeling) 
+mod1 <- glm(Shannon ~ canopy_density + Mean_ground_cover + Mean_regen_density, data = for_modeling, family = binomial()) 
 
 summary(mod1)
 ```
 
 ```{r}
-mod2 <- lm(meanShannon ~ Mean_canopy_dens + Mean_ground_cover, data = for_modeling) 
+mod2 <- lm(Shannon ~ canopy_density + Mean_ground_cover, data = for_modeling) 
 
 summary(mod2)
 ```
 
 ```{r}
-mod3 <- lm(meanShannon ~ Mean_canopy_dens + Mean_regen_density, data = for_modeling) 
+mod3 <- lm(Shannon ~ canopy_density + Mean_regen_density, data = for_modeling) 
 
 summary(mod3)
 #this model seems fairly good, with a p-value of 0.065 and a Multiple R-Squared of 0.9349
 ```
 
 ```{r}
-mod4 <- lm(meanShannon ~ Mean_ground_cover + Mean_regen_density, data = for_modeling) 
+mod4 <- lm(Shannon ~ Mean_ground_cover + Mean_regen_density, data = for_modeling) 
 
 summary(mod4)
 ```

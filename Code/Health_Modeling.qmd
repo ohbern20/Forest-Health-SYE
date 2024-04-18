@@ -93,13 +93,13 @@ Tree_Diversity$SR <- numspec
 
 Summarize Tree_Diversity
 ```{r}
-#Tree_Div <- Tree_Diversity %>% group_by(Forest) %>%
-# summarize(meanSimpson = mean(Simpson),
-#            seSimpson = sd(Simpson)/sqrt(sum(!is.na(Simpson))),
- #           meanShannon = mean(Shannon),
-  #          seShannon = sd(Shannon)/sqrt(sum(!is.na(Shannon))),
-   #         meanSR = mean(SR),
-    #        seSR = sd(SR)/sqrt(sum(!is.na(SR))))
+Tree_Div_byForest <- Tree_Diversity %>% group_by(Forest) %>%
+ summarize(meanSimpson = mean(Simpson),
+           seSimpson = sd(Simpson)/sqrt(sum(!is.na(Simpson))),
+           meanShannon = mean(Shannon),
+           seShannon = sd(Shannon)/sqrt(sum(!is.na(Shannon))),
+           meanSR = mean(SR),
+           seSR = sd(SR)/sqrt(sum(!is.na(SR))))
 
 #based on Shannon Index, South Hammond is the most diverse forest, and Degrasse is the least diverse 
 ```
@@ -204,9 +204,9 @@ ShowSubsets(subsets_mod)
 
 
 ```{r}
-mod_canopy <- glm(Shannon ~ canopy_density, data = for_modeling)
+mod_canopy <- lm(Shannon ~ canopy_density, data = for_modeling)
 
-summary(mod_canopy)
+summary(mod_canopy) 
 ```
 
 
@@ -214,9 +214,9 @@ summary(mod_canopy)
 Now, using for_modeling, I will attempt to create a model to predict forest health (with Shannon Div as a proxy) based on other variables 
 - could add deer abundance later 
 ```{r}
-mod1 <- glm(Shannon ~ canopy_density + Mean_ground_cover + Mean_regen_density, data = for_modeling, family = binomial()) 
+#mod1 <- glm(Shannon ~ canopy_density + Mean_ground_cover + Mean_regen_density, data = for_modeling, family = binomial()) 
 
-summary(mod1)
+#summary(mod1)
 ```
 
 ```{r}
@@ -268,18 +268,18 @@ SapDiv[is.na(SapDiv)]<-0
 ```
 
 
-Now I will use the TreeDiv data frame to calculate the following for each of the 5 forests:
-a. Average ± standard deviation of species richness of trees (from N = 3 plots)
+Now I will use the SapDiv data frame to calculate the following for each of the 5 forests:
+a. Average ± standard deviation of species richness of regen (from N = 3 plots)
 ```{r}
-numspec <- specnumber(SapDiv)
+numspec_sap <- specnumber(SapDiv[,3:23])
 ```
 
-b. Average ± standard deviation of Shannon index (H') of trees (from N = 3 plots)
+b. Average ± standard deviation of Shannon index (H') of regen (from N = 3 plots)
 ```{r}
 shannon_sap <- diversity(SapDiv[,3:23], index = "shannon")
 ```
 
-c. Average ± standard deviation of Simpson's index (1/Ds, i.e., use index = “invsimpson”) of trees (from N = 3 plots)
+c. Average ± standard deviation of Simpson's index (1/Ds, i.e., use index = “invsimpson”) of regen (from N = 3 plots)
 ```{r}
 simpson_sap <- diversity(SapDiv[,3:23], index = "invsimpson")
 ```
@@ -287,22 +287,22 @@ simpson_sap <- diversity(SapDiv[,3:23], index = "invsimpson")
 
 I will build a dataframe that allows me to compare the diversity values between forests. 
 ```{r}
-Tree_Diversity <- data.frame(Forest = character(15),
+Sap_Diversity <- data.frame(Forest = character(15),
                          Plot = numeric(15),
                Simpson = numeric(15),
                Shannon = numeric(15),
                SR = numeric(15))
 
-Tree_Diversity$Forest <- TreeDiv$Forest
-Tree_Diversity$Plot <- TreeDiv$Plot
-Tree_Diversity$Simpson <- simpson_sap
-Tree_Diversity$Shannon <- shannon_sap
-Tree_Diversity$SR <- numspec
+Sap_Diversity$Forest <- TreeDiv$Forest
+Sap_Diversity$Plot <- TreeDiv$Plot
+Sap_Diversity$Simpson <- simpson_sap
+Sap_Diversity$Shannon <- shannon_sap
+Sap_Diversity$SR <- numspec_sap
 ```
 
-Summarize Tree_Diversity
+Summarize Sap_Diversity
 ```{r}
-Tree_Div <- Tree_Diversity %>% group_by(Forest) %>%
+Sap_Div_byForest <- Sap_Diversity %>% group_by(Forest) %>%
   summarize(meanSimpson = mean(Simpson),
             seSimpson = sd(Simpson)/sqrt(sum(!is.na(Simpson))),
             meanShannon = mean(Shannon),
@@ -310,10 +310,143 @@ Tree_Div <- Tree_Diversity %>% group_by(Forest) %>%
             meanSR = mean(SR),
             seSR = sd(SR)/sqrt(sum(!is.na(SR))))
 
-#based on Shannon Index, South Hammond is the most divese forest, and Degrasse is the least diverse 
+#based on Shannon Index, Donnerville is the most diverse forest, and Peavine Swamp is the least diverse for regen
 ```
 
 
+## Model Regen Diversity 
+
+First, I need a dataframe that contains Shannon Index and the other potential variables I want as predictors.
+```{r}
+Canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"))
+Regen <- read.csv(here("Data", "Regen_data_summer22.csv"))
+```
+
+Now, I will find the mean canopy density for each plot, and then the mean canopy density for each forest using the Canopyapp method
+```{r}
+canopy_dens <- Canopy |>
+  group_by(Forest, Plot_num) |>
+  summarise(canopy_density = sum(Canopyapp/4)) |>
+  ungroup() |>
+  slice(-1, -2)
+
+#now, I will find the canopy density for each forest
+#canopy_dens <- canopy_dens |>
+ # group_by(Forest) |>
+  #summarise(Mean_canopy_dens = sum(plot_dens/3),
+   #         SD_canopy_dens = sd(plot_dens))
+```
+
+
+Now, I will find the mean percent ground cover for each forest (I only did one cover plot per forest plot)
+```{r}
+mean_cover <- Canopy |>
+  mutate(Total_cover = (100 - Percent_bare)) |>
+  group_by(Forest, Plot_num) |>
+  summarise(Mean_ground_cover = sum(Total_cover/12)) |>
+  ungroup() |>
+  slice(-1, -2)
+```
+
+Merge Canopy Density and Ground Cover DFs
+```{r}
+canopy_ground <- full_join(mean_cover, canopy_dens, join_by(Forest, Plot_num))
+```
+
+Now, find Mean Tree Density
+```{r}
+tree_dens <- DF |> 
+  filter(Type == "Tree") |>
+  group_by(Forest, Plot) |>
+  summarise(num_trees = n()) |>
+  group_by(Forest, Plot) |>
+  summarise(Mean_tree_density = sum(num_trees/3))
+
+#what should we divide by (3)? 
+#this gives tree density per plot
+
+#now I'm going to rename Kip Tract to Kip 
+tree_dens <- tree_dens |>
+  mutate(Forest = as.character(Forest)) |>
+  mutate(Forest = replace(Forest, Forest == 'Kip tract', 'Kip'))
+```
+
+Now, merge tree_dens with DF from above
+```{r}
+tree_can_ground <- full_join(canopy_ground, tree_dens, join_by(Forest, Plot_num == Plot))
+
+#merged_dens <- merge(merged_canopy_ground, regen_dens, by = "Forest") 
+```
+
+Now, I need to add Shannon Index to merged_dens
+```{r}
+#first, I will rename Plot in Tree_Diversity to Plot_num
+Sap_Diversity <- Sap_Diversity |>
+  rename(Plot_num = Plot) |>
+  mutate(Forest = as.character(Forest)) |>
+  mutate(Forest = replace(Forest, Forest == 'Kip tract', 'Kip'))
+  
+
+for_modeling_sap <- full_join(tree_can_ground, Sap_Diversity, join_by(Forest, Plot_num))
+```
+
+
+Print a correlation matrix
+```{r}
+for_matrix_sap <- for_modeling_sap |> select (-c(Forest, Plot_num))
+cor_matrix_sap <- cor(for_matrix_sap)
+round(cor_matrix_sap, 3)
+
+#can see that SR and Shannon are HIGHLY correlated, so will not include in model. Will also not use Simpson. 
+```
+
+
+Run a best subsets
+```{r}
+library(leaps)
+library(here)
+source(here("ShowSubsets.R"))
+
+subsets_mod_sap <- regsubsets(Shannon ~  Mean_ground_cover + canopy_density + Mean_tree_density, data = for_modeling_sap, method = "forward")
+
+ShowSubsets(subsets_mod_sap)
+#canopy density looks like a good predictor
+```
+
+
+```{r}
+mod_canopy <- lm(Shannon ~ canopy_density, data = for_modeling_sap)
+
+summary(mod_canopy) 
+```
+
+
+
+Now, using for_modeling_sap, I will attempt to create a model to predict forest health (with Shannon Div as a proxy) based on other variables 
+- could add deer abundance later 
+```{r}
+#mod1 <- glm(Shannon ~ canopy_density + Mean_ground_cover + Mean_regen_density, data = for_modeling, family = binomial()) 
+
+#summary(mod1)
+```
+
+```{r}
+mod2 <- lm(Shannon ~ canopy_density + Mean_ground_cover, data = for_modeling_sap) 
+
+summary(mod2)
+```
+
+```{r}
+mod3 <- lm(Shannon ~ canopy_density + Mean_tree_density, data = for_modeling_sap) 
+
+summary(mod3)
+```
+
+```{r}
+mod4 <- lm(Shannon ~ Mean_ground_cover + Mean_tree_density, data = for_modeling_sap) 
+
+summary(mod4)
+```
 
 
 

@@ -1,0 +1,72 @@
+---
+title: "Ordination"
+format: html
+---
+
+Load packages
+```{r}
+library(tidyverse)
+library(here)
+library(ggfortify)
+library(vegan)
+library(ggpubr)
+library(ggrepel)
+#devtools::install_github("gavinsimpson/ggvegan")
+#library(ggvegan)
+```
+
+Pull in data 
+```{r}
+DF <- read.csv(here("Data", "Forest_Trees_and_Regen_2021.csv"), stringsAsFactors = TRUE)
+Canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"))
+Regen <- read.csv(here("Data", "Regen_data_summer22.csv"))
+```
+
+```{r}
+DF <- DF[-which(is.na(DF$sci_name)), ]
+DF <- DF[-which(DF$sci_name == ""), ]
+
+TreeDiv <- DF %>%
+  filter(Type == "Tree") 
+
+#calculate species richness
+TreesSR <- length(unique(TreeDiv$sci_name))
+
+#Now get a summary of the number of trees per species per plot
+TreeDiv <- TreeDiv %>% group_by(Forest, Plot, sci_name) %>% summarise(num_trees = length(sci_name))
+
+
+#have the info we need, now transpose it to fit vegan
+TreeDiv <- TreeDiv %>%
+  relocate(sci_name, .before = Forest) 
+
+
+#now I will pivot the datatable
+TreeDiv <- TreeDiv %>%
+  pivot_wider(names_from = sci_name, values_from = num_trees)
+
+#now I will fill in NAs with zeros
+TreeDiv[is.na(TreeDiv)]<-0
+
+unique(DF$sci_name)
+length(unique(DF$sci_name))
+
+TreeOrd <- metaMDS(TreeDiv[, 3:23], distance = "bray", k = 2)
+```
+
+```{r}
+TreeOrd$stress
+#stress is less than 0.2, which is good I think. Reflects how the ordination summarizes "distance" among samples 
+```
+
+```{r}
+stressplot(TreeOrd)
+```
+
+```{r}
+ForPlotting<-fortify(TreeOrd)
+```
+
+
+
+

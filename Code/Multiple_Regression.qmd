@@ -3,6 +3,8 @@ title: "Final Multiple Regression "
 format: html
 ---
 
+## Organize Data for Regression 
+
 Set things up
 ```{r}
 rm(list = ls())
@@ -38,7 +40,7 @@ Join the dataframes
 ```{r}
 tree_regen_div <- full_join(Trees, Regen, by = c("Forest" = "Forest", "Plot_num" = "Plot_num", "Mean_ground_cover" = "Mean_ground_cover", "canopy_density" = "canopy_density"))
 
-write.csv(tree_regen_div, here("Data", "Cleaned", "tree_regen_div"))
+write.csv(tree_regen_div, here("Data", "Cleaned", "tree_regen_div"), row.names = FALSE)
 ```
 
 Now, pull in soil data
@@ -161,8 +163,6 @@ density <- density |>
          Plot_num = forest_ecology_plot_number)
 
 
- rename(Plot_num = Plot)
-
 #rename kip and peavine 
 density <- density |>
   mutate(Forest = replace(Forest, Forest == 'Kip Tract', 'Kip'))
@@ -172,26 +172,130 @@ density <- density |>
 
 full_for_regression <- full_join(div_soil_basal_mammal, density, by = c("Forest" = "Forest", "Plot_num" = "Plot_num"))
 
-write.csv(full_for_regression, here("Data", "Cleaned", "data_for_table.csv"))
+write.csv(full_for_regression, here("Data", "Cleaned", "data_for_table.csv"), row.names = FALSE)
 ```
 
 Delete columns I don't need
 ```{r}
 correlation_df <- full_for_regression |>
-  select(-c("Simpson_regen", "sd_basal_m2", "SR_trees"))
+  select(-c("Simpson_regen", "Simpson_trees", "sd_basal_m2", "SR_trees"))
 
-write.csv(correlation_df, here("Data", "Cleaned", "data_for_regression.csv"))
+write.csv(correlation_df, here("Data", "Cleaned", "data_for_regression.csv"), row.names = FALSE)
+```
+
+## Run the Regression
+
+Notes from meeting with Dr. Lock: 
+
+Run cor matrix on full dataset - response w forest, and response w mammal 
+
+If cor is > 0.7, pick one of the variables 
+
+How should I model? Best subsets or stepwise (nvmax, num predictor, at 5). 
+Do stepwise after best subsets 
+
+Generally, select best model using aic? How should I generate those values?  
+- get aic with stepwise output 
+
+Limitation with degrees freedom - should I do one set of forest models, one set of mammal models? 
+
+Assumptions - are data normal? - (just check for major outliers, distributions of shannon and predictor variables w scatterplots) 
+
+Descriptive project, not formal hypo testing 
+
+Using shannon of trees for forest health proxy - could use something else, like total forest basal area
+- see if basal is highly related to shannon. if it's different, than might be measuring something different and could have different predictors in the model 
+
+lm
+
+3 best forest measures - does the model get better by throwing in a mammal measurement? 
+
+pick forest based model, look at residuals and save as a new variable, see if there is a mammal based predictor that is strongly correlated to residuals 
+
+could also do best subsets with just mammal based 
+
+Clean things up and pull in data
+```{r}
+rm(list = ls())
+library(here)
+library(tidyverse)
+source(here("ShowSubsets.R"))
+
+DF <- read.csv(here("Data", "Cleaned", "data_for_regression.csv"))
+```
+
+Run a full correlation matrix
+```{r}
+for_matrix <- DF |> select(-c(Forest, Plot_num))
+full_matrix <- cor(for_matrix)
+round(full_matrix, 3)
+
+for_matrix_sap <- for_modeling_sap |> select (-c(Forest, Plot_num))
+cor_matrix_sap <- cor(for_matrix_sap)
+round(cor_matrix_sap, 3)
+
+#can see that SR_regen has a correlation with mSOM of -0.778
+#mCEC has a 0.849 correlation with mSOM and a -0.839 with m_pH
+#m_pH and mSOM have a -0.937
+#mSOM Shannon_regen have -0.835
+
+#to avoid correlation between predictors, seems like it would be a good idea to choose just one of the soil measurements. Since mSOM has high correlation with SR_regen and Shannon_regen, maybe I won't use that one, and instead will use either mCEC or m_pH. 
+#of the mammal variables, seems like squirrels could be best predictor for shannon of trees. Mean_tree_density and median_basal_m2, as well as Shannon of mammals look pretty good. 
+```
+
+
+Run a cor matrix just on forest predictors
+
+
+Run a cor matrix just on mammal predictors
+
+Run a best subsets on full dataset to see what happens, using max number of predictors = 5. 
+```{r}
+subset_full <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + SR_regen + mCEC + m_pH + mNitrate + mSOM + total_basal_m2 + median_basal_m2 + Shannon_mammals + mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward")
+
+ShowSubsets(subset_full)
+```
+
+```{r}
+subset_5 <- regsubsets(Shannon_trees ~  .,nbest = 5, data = DF, method = "forward")
+
+ShowSubsets(subset_5)
+
+
+subset_5 <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + SR_regen + mCEC + m_pH + mNitrate + mSOM + total_basal_m2 + median_basal_m2 + Shannon_mammals + mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_5)
+```
+
+Run a best subsets just with tree data
+```{r}
+subset_tree <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + SR_regen + mCEC + m_pH + mNitrate + mSOM + total_basal_m2 + median_basal_m2, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_tree)
+
+#this shows that the model with the lowest Cp (0.26) includes the predictors mNitrate, Shannon_regen, and Mean_tree_density
+```
+
+Run s best subsets with just mammal predictors
+```{r}
+subset_mammal <- regsubsets(Shannon_trees ~ Shannon_mammals + mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_mammal)
+#the model with the best Cp (4.65) includes the predictors mean_small_mammal_per100, mean_squirrel_density_per100, and Shannon_mammals. The single best predictor on it's own is mean_squirrel_density_per100. 
+```
+
+Run a best subsets with the best from each of the separate ones
+```{r}
+subset_combine <- regsubsets(Shannon_trees ~ Shannon_mammals  + mean_squirrel_density_per100 + mean_small_mammal_per100 + mNitrate + Shannon_regen + Mean_tree_density, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_combine)
 ```
 
 
 
-Run cor matrix on full dataset
-If cor is > 0.7, pick one of the variables 
-How should I model? Best subsets, or something else? Generally, select best model using aic? How should I generate those values?  
-Limitation with degrees freedom - should I do one set of forest models, one set of mammal models? 
-Assumptions - are data normal? 
-Descriptive project, not formal hypo testing 
-Using shannon of trees for forest health proxy - could use something else, like total forest basal area
+
+
+
 
 
 

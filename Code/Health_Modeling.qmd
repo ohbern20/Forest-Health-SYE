@@ -1,5 +1,5 @@
 ---
-title: "Healt hModeling"
+title: "Health Modeling"
 format: html
 ---
 
@@ -177,6 +177,8 @@ Tree_Diversity <- Tree_Diversity |>
   
 
 for_modeling <- full_join(regen_can_ground, Tree_Diversity, join_by(Forest, Plot_num))
+
+write.csv(for_modeling, here("Data", "Cleaned", "tree_div_canopy_ground.csv"), row.names = FALSE)
 ```
 
 
@@ -298,6 +300,8 @@ Sap_Diversity$Plot <- TreeDiv$Plot
 Sap_Diversity$Simpson <- simpson_sap
 Sap_Diversity$Shannon <- shannon_sap
 Sap_Diversity$SR <- numspec_sap
+
+write.csv(Sap_Diversity, here("Data", "Cleaned", "Regen_div.csv"), row.names = FALSE)
 ```
 
 Summarize Sap_Diversity
@@ -388,6 +392,8 @@ Sap_Diversity <- Sap_Diversity |>
   
 
 for_modeling_sap <- full_join(tree_can_ground, Sap_Diversity, join_by(Forest, Plot_num))
+
+write.csv(for_modeling_sap, here("Data", "Cleaned", "regen_diversity_canopy_ground.csv"), row.names = FALSE)
 ```
 
 

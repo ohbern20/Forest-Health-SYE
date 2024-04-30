@@ -1,0 +1,29 @@
+---
+title: "Final Multiple Regression "
+format: html
+---
+
+Set things up
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(here)
+
+Regen <- read.csv(here("Data", "Cleaned", "regen_diversity_canopy_ground.csv"), stringsAsFactors = TRUE)
+
+Trees <- read.csv(here("Data", "Cleaned", "tree_div_canopy_ground.csv"), stringsAsFactors = TRUE)
+```
+
+
+Rename Simpson and Shannon variables to be specific to trees and regen
+```{r}
+#rename regen first
+Regen <- rename(Regen, Simpson_regen = Simpson)
+
+
+rename(iris, petal_length = Petal.Length)
+```
+
+
+
+

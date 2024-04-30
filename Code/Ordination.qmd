@@ -11,14 +11,14 @@ library(ggfortify)
 library(vegan)
 library(ggpubr)
 library(ggrepel)
-#devtools::install_github("gavinsimpson/ggvegan")
-#library(ggvegan)
+devtools::install_github("gavinsimpson/ggvegan")
+library(ggvegan)
 ```
 
 Pull in data 
 ```{r}
 DF <- read.csv(here("Data", "Forest_Trees_and_Regen_2021.csv"), stringsAsFactors = TRUE)
-Canopy <- read.csv(here("Data", "Ground_cover_canopy_density_summer22.csv"))
+
 Regen <- read.csv(here("Data", "Regen_data_summer22.csv"))
 ```
 
@@ -67,6 +67,9 @@ stressplot(TreeOrd)
 ForPlotting<-fortify(TreeOrd)
 ```
 
+```{r}
+
+```
 
 
 

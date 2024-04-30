@@ -12,18 +12,86 @@ library(here)
 Regen <- read.csv(here("Data", "Cleaned", "regen_diversity_canopy_ground.csv"), stringsAsFactors = TRUE)
 
 Trees <- read.csv(here("Data", "Cleaned", "tree_div_canopy_ground.csv"), stringsAsFactors = TRUE)
+
+Test <- read.csv(here("Data", "Cleaned", "Regen_div.csv"), stringsAsFactors = TRUE)
 ```
 
 
-Rename Simpson and Shannon variables to be specific to trees and regen
+Rename Simpson and Shannon and SR variables to be specific to trees and regen
 ```{r}
 #rename regen first
-Regen <- rename(Regen, Simpson_regen = Simpson)
+Regen <- Regen |>
+  rename(Simpson_regen = Simpson,
+         Shannon_regen = Shannon,
+         SR_regen = SR)
 
 
-rename(iris, petal_length = Petal.Length)
+#trees second 
+Trees <- Trees |>
+  rename(Simpson_trees = Simpson,
+         Shannon_trees = Shannon,
+         SR_trees = SR)
 ```
 
+
+Join the dataframes
+```{r}
+tree_regen_div <- full_join(Trees, Regen, by = c("Forest" = "Forest", "Plot_num" = "Plot_num", "Mean_ground_cover" = "Mean_ground_cover", "canopy_density" = "canopy_density"))
+
+write.csv(tree_regen_div, here("Data", "Cleaned", "tree_regen_div"))
+```
+
+Now, pull in soil data
+```{r}
+Soil <- read.csv(here("Data", "Cleaned", "EnviroVars2021.csv"))
+
+ggplot(data = Soil, aes(x = mCEC)) +
+  geom_histogram()
+
+ggplot(data = Soil, aes(x = m_pH)) +
+  geom_histogram()
+
+ggplot(data = Soil, aes(x = mK)) +
+  geom_histogram()
+#won't use
+
+ggplot(data = Soil, aes(x = mMg)) +
+  geom_histogram()
+#won't use
+
+ggplot(data = Soil, aes(x = mNitrate)) +
+  geom_histogram()
+
+ggplot(data = Soil, aes(x = mSOM)) +
+  geom_histogram()
+
+#I will look at mCEC, m_pH, mNitrate, and mSOM
+soil_info <- select(Soil, c("Forest", "Plot", "mCEC", "m_pH", "mNitrate", "mSOM"))
+
+#rename kip tract to just kip 
+soil_info <- soil_info |>
+  mutate(Forest = replace(Forest, Forest == 'Kip tract', 'Kip'))
+```
+
+Add soil to dataframe
+```{r}
+div_soil <- full_join(tree_regen_div, soil_info, by = c("Forest" = "Forest", "Plot_num" = "Plot"))
+```
+
+Now, calculate tree basal area 
+```{r}
+Basal <- read.csv(here("Data", "Forest_Trees_and_Regen_2021.csv"))
+
+Find_basal <- Basal |>
+  filter(Type == "Tree") |>
+  mutate(DBH_m = DBH_cm/100,
+         radius_m = DBH_m/2,
+         area_m2 = pi*(radius_m*radius_m)) |>
+  group_by(Forest, Plot) |>
+  summarise(total_basal_m2 = sum(area_m2),
+            median_basal_m2 = median(area_m2),
+            sd_basal_m2 = sd(area_m2)/sqrt(sum(!is.na(area_m2))))
+```
 
 
 

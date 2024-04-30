@@ -56,6 +56,8 @@ TreeDiv <- TreeDiv %>%
 
 #now I will fill in NAs with zeros
 TreeDiv[is.na(TreeDiv)]<-0
+
+write.csv(TreeDiv, here("Data", "Cleaned", "trees_for_ordination.csv"), row.names = FALSE)
 ```
 
 

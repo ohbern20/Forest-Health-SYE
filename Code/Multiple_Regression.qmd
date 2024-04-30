@@ -94,4 +94,105 @@ Find_basal <- Basal |>
 ```
 
 
+Add basal area to dataframe
+```{r}
+#first rename kip
+Find_basal <- Find_basal |>
+  mutate(Forest = replace(Forest, Forest == 'Kip tract', 'Kip'))
+
+
+div_soil_basal <- full_join(div_soil, Find_basal, by = c("Forest" = "Forest", "Plot_num" = "Plot"))
+```
+
+Now, pull in mammal data for mammal diversity 
+```{r}
+mammal_div <- read.csv(here("Data", "mammal_data_for_vegan.csv"))
+```
+
+Use vegan to calculate diveristy 
+```{r}
+library(vegan)
+
+shannon <- diversity(mammal_div[,3:25], index = "shannon")
+
+Mammal_Diversity <- data.frame(Forest = character(15),
+                         Plot = numeric(15),
+               Shannon_mammals = numeric(15))
+
+Mammal_Diversity$Forest <- mammal_div$forest_or_site_name
+Mammal_Diversity$Plot <- mammal_div$forest_ecology_plot_number
+Mammal_Diversity$Shannon_mammals <- shannon
+```
+
+
+Now add shannon for mammals to dataframe
+```{r}
+Mammal_Diversity <- Mammal_Diversity |>
+  mutate(Forest = replace(Forest, Forest == 'Kip Tract', 'Kip'))
+
+Mammal_Diversity <- Mammal_Diversity |>
+  mutate(Forest = replace(Forest, Forest == 'Peavine', 'Peavine Swamp'))
+
+div_soil_basal_mammal <- full_join(div_soil_basal, Mammal_Diversity, by = c("Forest" = "Forest", "Plot_num" = "Plot"))
+```
+
+
+Pull in deer/squirrel/small mammal density
+```{r}
+animals <- read.csv(here("Data", "deer_small_critter_abundance 1.csv"))
+```
+
+Mean density
+```{r}
+density <- animals |>
+  group_by(forest_or_site_name, forest_ecology_plot_number) |>
+  summarize(mean_deer_density_per100 = mean(mean_deer_per_100_cam_nights, na.rm = T),
+            mean_squirrel_density_per100 = mean(mean_squirrels__per_100_cam_nights, na.rm = T),
+            mean_small_mammal_per100 = mean(mean_small_mammals_per_100_cam_nights, na.rm = T))
+
+#for methods, the animal density measurements include camera data from 2021-2023. 
+```
+
+Add to big dataframe
+```{r}
+#rename forest and plot variables 
+density <- density |>
+  rename(Forest = forest_or_site_name,
+         Plot_num = forest_ecology_plot_number)
+
+
+ rename(Plot_num = Plot)
+
+#rename kip and peavine 
+density <- density |>
+  mutate(Forest = replace(Forest, Forest == 'Kip Tract', 'Kip'))
+
+density <- density |>
+  mutate(Forest = replace(Forest, Forest == 'Peavine', 'Peavine Swamp'))
+
+full_for_regression <- full_join(div_soil_basal_mammal, density, by = c("Forest" = "Forest", "Plot_num" = "Plot_num"))
+
+write.csv(full_for_regression, here("Data", "Cleaned", "data_for_table.csv"))
+```
+
+Delete columns I don't need
+```{r}
+correlation_df <- full_for_regression |>
+  select(-c("Simpson_regen", "sd_basal_m2", "SR_trees"))
+
+write.csv(correlation_df, here("Data", "Cleaned", "data_for_regression.csv"))
+```
+
+
+
+Run cor matrix on full dataset
+If cor is > 0.7, pick one of the variables 
+How should I model? Best subsets, or something else? Generally, select best model using aic? How should I generate those values?  
+Limitation with degrees freedom - should I do one set of forest models, one set of mammal models? 
+Assumptions - are data normal? 
+Descriptive project, not formal hypo testing 
+Using shannon of trees for forest health proxy - could use something else, like total forest basal area
+
+
+
 

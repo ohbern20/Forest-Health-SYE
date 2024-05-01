@@ -219,6 +219,7 @@ Clean things up and pull in data
 rm(list = ls())
 library(here)
 library(tidyverse)
+library(leaps)
 source(here("ShowSubsets.R"))
 
 DF <- read.csv(here("Data", "Cleaned", "data_for_regression.csv"))
@@ -230,9 +231,6 @@ for_matrix <- DF |> select(-c(Forest, Plot_num))
 full_matrix <- cor(for_matrix)
 round(full_matrix, 3)
 
-for_matrix_sap <- for_modeling_sap |> select (-c(Forest, Plot_num))
-cor_matrix_sap <- cor(for_matrix_sap)
-round(cor_matrix_sap, 3)
 
 #can see that SR_regen has a correlation with mSOM of -0.778
 #mCEC has a 0.849 correlation with mSOM and a -0.839 with m_pH
@@ -274,9 +272,13 @@ subset_tree <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + 
 ShowSubsets(subset_tree)
 
 #this shows that the model with the lowest Cp (0.26) includes the predictors mNitrate, Shannon_regen, and Mean_tree_density
+
+mod_forest <- lm(Shannon_trees ~ mNitrate + Shannon_regen + Mean_tree_density, data = DF)
+summary(mod_forest)
+#p-value: 0.008774, Adjusted R-squared:  0.5394 
 ```
 
-Run s best subsets with just mammal predictors
+Run a best subsets with just mammal predictors
 ```{r}
 subset_mammal <- regsubsets(Shannon_trees ~ Shannon_mammals + mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward", nvmax = 5)
 
@@ -284,11 +286,33 @@ ShowSubsets(subset_mammal)
 #the model with the best Cp (4.65) includes the predictors mean_small_mammal_per100, mean_squirrel_density_per100, and Shannon_mammals. The single best predictor on it's own is mean_squirrel_density_per100. 
 ```
 
+
 Run a best subsets with the best from each of the separate ones
 ```{r}
 subset_combine <- regsubsets(Shannon_trees ~ Shannon_mammals  + mean_squirrel_density_per100 + mean_small_mammal_per100 + mNitrate + Shannon_regen + Mean_tree_density, data = DF, method = "forward", nvmax = 5)
 
 ShowSubsets(subset_combine)
+
+#Cps are not as good
+```
+
+So, going back to the plain forest model, I will see what happens if I add a mammal predictor to that model
+```{r}
+mod_forest_mammal <- lm(Shannon_trees ~ mNitrate + Shannon_regen + Mean_tree_density + Shannon_mammals, data = DF)
+
+summary(mod_forest_mammal)
+
+#with Shannon_mammals added, the p-value: 0.006754, Adjusted R-squared:  0.621 
+```
+
+Run a stepwise regression on this combination of predictors to get AIC
+```{r}
+mod_forest_mammal_step <- lm(Shannon_trees ~ mNitrate + Shannon_regen + Mean_tree_density + Shannon_mammals, data = DF)
+
+step(mod_forest_mammal_step)
+
+#AIC = -39.64
+#I also notice that Shannon_mammals has a negative coefficient 
 ```
 
 

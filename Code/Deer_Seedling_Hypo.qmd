@@ -3,4 +3,44 @@ title: "Deer Density and Seedling Density Hypo"
 format: html
 ---
 
-Need access to camera data 
+Pull in data
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(here)
+
+deer <- read.csv(here("Data", "deer_small_critter_abundance 1.csv"))
+regen <- read.csv(here("Data", "Forest_Regeneration_17_21.csv"))
+```
+
+First, calculate regen density 
+```{r}
+regen_dens_plot <- regen |> 
+  filter(Year == 2021) |>
+  group_by(Forest, PlotNum, Quadrant) |>
+  summarise(num_regen = n()) |>
+  group_by(Forest, PlotNum) |>
+  summarise(Mean_regen_density = sum(num_regen/3),
+            SD_regen = sd(num_regen))
+```
+
+Now get deer data ready and then combine regen_dens_plot with deer data
+```{r}
+deer_dens <- deer |>
+  filter(year == 2021) |>
+  select(-c("mean_squirrels__per_100_cam_nights", "mean_small_mammals_per_100_cam_nights", "year")) |>
+  mutate(forest_or_site_name = replace(forest_or_site_name, forest_or_site_name == 'Kip Tract', 'Kip tract'),
+         forest_or_site_name = replace(forest_or_site_name, forest_or_site_name == 'Peavine', 'Peavine Swamp'))
+
+
+
+#join the dataframes
+
+deer_regen <- full_join(regen_dens_plot, deer_dens, by = c("Forest" = "forest_or_site_name", "PlotNum" = "forest_ecology_plot_number"))
+
+```
+
+
+
+
+

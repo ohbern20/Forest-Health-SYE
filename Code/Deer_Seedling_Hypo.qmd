@@ -41,6 +41,18 @@ deer_regen <- full_join(regen_dens_plot, deer_dens, by = c("Forest" = "forest_or
 ```
 
 
+Now I will make a preliminary plot of the relationship between variables of interest
+```{r}
+ggplot(data = deer_regen, aes(x = mean_deer_per_100_cam_nights, y = Mean_regen_density)) +
+  geom_point()
+```
+
+
+Now, I will run a regression on regen density and deer density
+```{r}
+mod1 <- lm(mean_deer_per_100_cam_nights ~ Mean_regen_density, data = deer_regen)
+summary(mod1)
+```
 
 
 

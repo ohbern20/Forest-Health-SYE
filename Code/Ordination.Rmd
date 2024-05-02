@@ -26,7 +26,7 @@ Next, we need some data. Use the dataset called "TreesIV.csv". This dataset has 
 
 ```{r}
 #write code to read in the data here
-trees<-read.csv(here("Output", "Olivia", "trees_for_ordination.csv"))
+trees<-read.csv(here("Data", "Cleaned", "trees_for_ordination.csv"))
 ```
 
 The dataframe Trees has 23 columns. The first two identify the forest and plot, respectively. The remainder identify the importance value for each species that we observed across all of our forest sampling. I have precleaned the data set for you, so you can bypass the standard practice of data checking (just this once!).
@@ -216,7 +216,7 @@ First, pull in the environmental data. Use the dataset called "EnviroVars2021.cs
 
 ```{r}
 #write your code here
-ENV<-read.csv(here("Output", "Olivia", "EnviroVars2021.csv"))
+ENV<-read.csv(here("Data", "Cleaned", "EnviroVars2021.csv"))
 ```
 Now fit environmental variables onto our ordination
 ```{r}
@@ -253,7 +253,7 @@ Now subset to only those env vars with p < 0.06
 
 ```{r}
 myrows<-c("Bare", "Bry", "Vasc", "Elevation_m", "mNitrate", "mCa", "mMg", "mCEC")
-env.scrs<-env.scrs %>% filter(Label %in% myrows)
+env.scrs<-env.scrs %>% filter(label %in% myrows)
 names(env.scrs)<-c("score", "label", "NMDS1", "NMDS2")
 ```
 Now connect to ForPlotting
@@ -299,26 +299,26 @@ p3
 Now blend into a 3-piece plot
 
 ```{r}
-TreeIVOrdination1<-ggarrange(p1,p2,p3,ncol = 1)
+TreeIVOrdination1<-ggarrange(p1,p2,p3,ncol = 3)
 TreeIVOrdination1
 ```
 Or plot just sites and env vars together
 
 ```{r}
 ggplot()+
-  geom_point(data = subset(ForPlotting2, Score =="sites"),
+  geom_point(data = subset(ForPlotting2, score =="sites"),
               mapping = aes(x = NMDS1, y = NMDS2, color = PlotInfo$Forest),
               alpha = 0.8)+
-  geom_text_repel(data = subset(ForPlotting, Score =="sites"), mapping = aes(x = NMDS1, y = NMDS2,label = PlotInfo$Plot))+ 
-   geom_segment(data=subset(ForPlotting2, Score == "env"),
+  geom_text_repel(data = subset(ForPlotting, score =="sites"), mapping = aes(x = NMDS1, y = NMDS2,label = PlotInfo$Plot))+ 
+   geom_segment(data=subset(ForPlotting2, score == "env"),
                 mapping = aes(x = 0, y = 0, xend = NMDS1,   yend=NMDS2),
                  arrow = arrow(length = unit(0.015, "npc"),
                type = "closed"),
                  color = "darkgray",
                  size = 1,
-               alpha = 0.8)+
-   geom_text(data = subset(ForPlotting2, Score == "env"),
-             mapping = aes(label = Label, x = NMDS1*1.2, y=NMDS2*1.2), alpha = 0.8)+
+               alpha = 0.8) 
+   geom_text(data = subset(ForPlotting2, score == "env"),
+             mapping = aes(label = label, x = NMDS1*1.2, y=NMDS2*1.2), alpha = 0.8)+
    geom_abline(intercept = 0, slope = 0, linetype = "dashed", size = 0.8, color = "gray")+
    geom_vline(aes(xintercept = 0), linetype = "dashed", size = 0.8, color = "gray")+
    theme(
@@ -326,8 +326,7 @@ ggplot()+
       panel.grid.minor = element_blank(),
       panel.background = element_blank(),
       axis.line = element_line(color = "black"),
-      legend.position = "none")
-   
+      legend.position = "none") 
 
 ```
 

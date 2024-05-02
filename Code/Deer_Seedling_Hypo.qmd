@@ -43,8 +43,9 @@ deer_regen <- full_join(regen_dens_plot, deer_dens, by = c("Forest" = "forest_or
 
 Now I will make a preliminary plot of the relationship between variables of interest
 ```{r}
-ggplot(data = deer_regen, aes(x = mean_deer_per_100_cam_nights, y = Mean_regen_density)) +
-  geom_point()
+ggplot(data = deer_regen, aes(x = mean_deer_per_100_cam_nights, y = Mean_regen_density, color = Forest, shape = Forest)) +
+  geom_point()+
+  scale_color_viridis_d()
 ```
 
 
@@ -52,7 +53,10 @@ Now, I will run a regression on regen density and deer density
 ```{r}
 mod1 <- lm(mean_deer_per_100_cam_nights ~ Mean_regen_density, data = deer_regen)
 summary(mod1)
+
+#p-value = 0.6881, 1 and 12 DF 
 ```
 
+Take out outlier deer (60) and re run model - if different explain what I did in results, talk about in discussion 
 
 

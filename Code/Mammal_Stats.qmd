@@ -1,0 +1,16 @@
+---
+title: "Mammal Div for Summary Table"
+format: html
+---
+
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(here)
+
+DF <- read.csv(here("Data", "deer_small_critter_abundance 1.csv"))
+```
+
+Find mean and sd mammal abundance per forest 
+
+Boxplot: group by year, calculate mean and sd for each forest, facet by forest (if its highly variable between years, just choose one year (maybe 2022 since closest to when i collected my data)) also will determine if I use all years in hypo with deer 

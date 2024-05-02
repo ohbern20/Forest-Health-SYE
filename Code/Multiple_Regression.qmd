@@ -93,6 +93,14 @@ Find_basal <- Basal |>
   summarise(total_basal_m2 = sum(area_m2),
             median_basal_m2 = median(area_m2),
             sd_basal_m2 = sd(area_m2)/sqrt(sum(!is.na(area_m2))))
+
+#find basal averaged per forest
+basal_by_forest <- Find_basal |>
+  group_by(Forest) |>
+  summarise(Mean_total_basal = mean(total_basal_m2),
+            Mean_median_basal = mean(median_basal_m2),
+            Sd_total_basal = sd(total_basal_m2),
+            Sd_median_basal = sd(median_basal_m2))
 ```
 
 
@@ -231,6 +239,8 @@ for_matrix <- DF |> select(-c(Forest, Plot_num))
 full_matrix <- cor(for_matrix)
 round(full_matrix, 3)
 
+write.csv(full_matrix, here("Outputs", "Cor_matrix.csv"), row.names = FALSE)
+
 
 #can see that SR_regen has a correlation with mSOM of -0.778
 #mCEC has a 0.849 correlation with mSOM and a -0.839 with m_pH
@@ -239,6 +249,8 @@ round(full_matrix, 3)
 
 #to avoid correlation between predictors, seems like it would be a good idea to choose just one of the soil measurements. Since mSOM has high correlation with SR_regen and Shannon_regen, maybe I won't use that one, and instead will use either mCEC or m_pH. 
 #of the mammal variables, seems like squirrels could be best predictor for shannon of trees. Mean_tree_density and median_basal_m2, as well as Shannon of mammals look pretty good. 
+
+#chose to dump mSOM, SR_regen, m_pH 
 ```
 
 
@@ -249,7 +261,7 @@ Run a cor matrix just on mammal predictors
 
 Run a best subsets on full dataset to see what happens, using max number of predictors = 5. 
 ```{r}
-subset_full <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + SR_regen + mCEC + m_pH + mNitrate + mSOM + total_basal_m2 + median_basal_m2 + Shannon_mammals + mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward")
+subset_full <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + mCEC + mNitrate + total_basal_m2 + median_basal_m2 + Shannon_mammals + mean_deer_density_per100  + mCEC + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward")
 
 ShowSubsets(subset_full)
 ```
@@ -260,14 +272,14 @@ subset_5 <- regsubsets(Shannon_trees ~  .,nbest = 5, data = DF, method = "forwar
 ShowSubsets(subset_5)
 
 
-subset_5 <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + SR_regen + mCEC + m_pH + mNitrate + mSOM + total_basal_m2 + median_basal_m2 + Shannon_mammals + mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward", nvmax = 5)
+subset_5 <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + mCEC  + mNitrate + total_basal_m2 + median_basal_m2 + Shannon_mammals + mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward", nvmax = 5)
 
 ShowSubsets(subset_5)
 ```
 
 Run a best subsets just with tree data
 ```{r}
-subset_tree <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + SR_regen + mCEC + m_pH + mNitrate + mSOM + total_basal_m2 + median_basal_m2, data = DF, method = "forward", nvmax = 5)
+subset_tree <- regsubsets(Shannon_trees ~  Mean_ground_cover + canopy_density + Mean_regen_density + Mean_tree_density + Shannon_regen + mNitrate + mSOM + total_basal_m2 + median_basal_m2, data = DF, method = "forward", nvmax = 5)
 
 ShowSubsets(subset_tree)
 
@@ -313,10 +325,13 @@ step(mod_forest_mammal_step)
 
 #AIC = -39.64
 #I also notice that Shannon_mammals has a negative coefficient 
+
+
+#run AIC table on all best model options - AIC of less than 2 away from lowest is considered equivalent 
 ```
 
 
-
+Run another set of models with Regen Density as response variable (much more variation)
 
 
 

@@ -1,0 +1,32 @@
+---
+title: "Soil Stats for Summary Table"
+format: html
+---
+
+```{r}
+rm(list = ls()) 
+library(here)
+library(tidyverse)
+
+Soil <- read.csv(here("Data", "Cleaned", "EnviroVars2021.csv"))
+```
+
+
+Find mean and sd for the soil stats I'm including in my cor matrix 
+```{r}
+for_table <- Soil |>
+  group_by(Forest) |>
+  summarise(mean_SOM = mean(mSOM),
+            sd_SOM = sd(mSOM),
+            mean_Nitrate = mean(mNitrate),
+            sd_Nitrate = sd(mNitrate),
+            mean_pH = mean(m_pH),
+            sd_pH = sd(m_pH),
+            mean_CEC = mean(mCEC),
+            sd_CEC = sd(mCEC))
+```
+
+
+
+
+

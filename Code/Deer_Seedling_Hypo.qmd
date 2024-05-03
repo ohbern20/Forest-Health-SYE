@@ -58,5 +58,38 @@ summary(mod1)
 ```
 
 Take out outlier deer (60) and re run model - if different explain what I did in results, talk about in discussion 
+```{r}
+deer_dens <- deer |>
+  filter(year == 2021) |>
+  select(-c("mean_squirrels__per_100_cam_nights", "mean_small_mammals_per_100_cam_nights", "year")) |>
+  mutate(forest_or_site_name = replace(forest_or_site_name, forest_or_site_name == 'Kip Tract', 'Kip tract'),
+         forest_or_site_name = replace(forest_or_site_name, forest_or_site_name == 'Peavine', 'Peavine Swamp')) 
+
+no_outlier <- deer_dens |>
+  slice(-13)
+
+```
+
+Combine data
+```{r}
+deer_regen_no_outlier <- full_join(regen_dens_plot, no_outlier, by = c("Forest" = "forest_or_site_name", "PlotNum" = "forest_ecology_plot_number"))
+```
+
+Plot
+```{r}
+ggplot(data = deer_regen_no_outlier, aes(x = mean_deer_per_100_cam_nights, y = Mean_regen_density, color = Forest, shape = Forest)) +
+  geom_point()+
+  scale_color_viridis_d()
+```
+
+Regression
+```{r}
+mod2 <- lm(mean_deer_per_100_cam_nights ~ Mean_regen_density, data = deer_regen_no_outlier)
+
+summary(mod2)
+
+#still has a very large p-value
+```
+
 
 

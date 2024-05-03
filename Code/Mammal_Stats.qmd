@@ -11,6 +11,70 @@ library(here)
 DF <- read.csv(here("Data", "deer_small_critter_abundance 1.csv"))
 ```
 
-Find mean and sd mammal abundance per forest 
+
 
 Boxplot: group by year, calculate mean and sd for each forest, facet by forest (if its highly variable between years, just choose one year (maybe 2022 since closest to when i collected my data)) also will determine if I use all years in hypo with deer 
+
+```{r}
+for_plotting_deer <- DF |>
+  mutate(year = as.factor(year)) |>
+  group_by(year, forest_or_site_name) |>
+  summarise(mean_deer = mean(mean_deer_per_100_cam_nights),
+            sd_deer = sd(mean_deer_per_100_cam_nights))
+
+ggplot(data = for_plotting_deer, aes(x = year, y = mean_deer)) +
+  geom_boxplot() +
+  facet_wrap(~forest_or_site_name)
+
+
+
+for_plotting_squirrel <- DF |>
+  mutate(year = as.factor(year)) |>
+  group_by(year, forest_or_site_name) |>
+  summarise(mean_squirrel = mean(mean_squirrels__per_100_cam_nights),
+            sd_squirrel = sd(mean_squirrels__per_100_cam_nights))
+
+ggplot(data = for_plotting_squirrel, aes(x = year, y = mean_squirrel)) +
+  geom_boxplot() +
+  facet_wrap(~forest_or_site_name)
+
+
+for_plotting_mammal <- DF |>
+  mutate(year = as.factor(year)) |>
+  group_by(year, forest_or_site_name) |>
+  summarise(mean_mammal = mean(mean_small_mammals_per_100_cam_nights),
+            sd_mammal = sd(mean_small_mammals_per_100_cam_nights))
+
+ggplot(data = for_plotting_mammal, aes(x = year, y = mean_mammal)) +
+  geom_boxplot() +
+  facet_wrap(~forest_or_site_name)
+```
+
+
+Find mean and sd mammal abundance per forest 
+```{r}
+summary_mammal <- DF |>
+  group_by(forest_or_site_name) |>
+  summarise(mean_deer = mean(mean_deer_per_100_cam_nights),
+            sd_deer = sd(mean_deer_per_100_cam_nights),
+            mean_squirrel = mean(mean_squirrels__per_100_cam_nights),
+            sd_squirrel = sd(mean_squirrels__per_100_cam_nights),
+            mean_mammal = mean(mean_small_mammals_per_100_cam_nights),
+            sd_mammal = sd(mean_small_mammals_per_100_cam_nights))
+```
+
+Find shannon diversity index of mammals 
+```{r}
+mammal_div <- read.csv(here("Data", "Cleaned", "data_for_regression.csv"))
+```
+
+
+```{r}
+div <- mammal_div |>
+  group_by(Forest) |>
+  summarise(mean_shannon_mammal = mean(Shannon_mammals),
+            sd_shannon_mammal = sd(Shannon_mammals))
+```
+
+
+

@@ -333,9 +333,39 @@ step(mod_forest_mammal_step)
 
 Run another set of models with Regen Density as response variable (much more variation)
 
+```{r}
+subset_regen <- regsubsets(Mean_regen_density ~  Shannon_trees + Mean_ground_cover + canopy_density + Mean_tree_density + Shannon_regen + mCEC + mNitrate + total_basal_m2 + median_basal_m2 + Shannon_mammals + mean_deer_density_per100  + mCEC + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_regen)
+```
 
 
+The best three models according to the regsubsets and the Cp output
+```{r}
+mod_forest_regen1 <- lm(Mean_regen_density ~ mCEC + mNitrate + median_basal_m2 + Shannon_mammals + Mean_ground_cover, data = DF)
 
+summary(mod_forest_regen1)
 
+mod_forest_regen2 <- lm(Mean_regen_density ~ mCEC + mNitrate + median_basal_m2 + Shannon_mammals, data = DF)
+
+summary(mod_forest_regen2)
+
+mod_forest_regen3 <- lm(Mean_regen_density ~ mCEC + mNitrate + median_basal_m2, data = DF)
+
+summary(mod_forest_regen3)
+```
+
+Create AIC table
+```{r}
+library(AICcmodavg)
+
+models <- list(mod_forest_regen1, mod_forest_regen2, mod_forest_regen3)
+
+mod.names <- c('model1', 'model2', 'model3')
+
+aictab(cand.set = models, modnames = mod.names)
+
+#getting errors here because of package issues
+```
 
 

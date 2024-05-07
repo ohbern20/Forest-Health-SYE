@@ -79,9 +79,17 @@ We can plot the results using the `ggvegan` and `ggplot2` packages. Make sure  y
 
 The first step is to use a function called `fortify` to rearrange the output into a long-format dataframe familiar to ggplot2. Then we can make a basic plot. Then we will spruce up our basic plot.
 
+Make a vector of forest names 
+```{r}
+plot_names <- c("Deg-1", "Deg-2", "Deg-3", "Don-1", "Don-2", "Don-3", "Kip-1", "Kip-2", "Kip-3", "Pea-1", "Pea-2","Pea-3", "Ham-1", "Ham-2", "Ham-3")
+```
+
+
 ### Fortify the result
 ```{r}
 ForPlotting<-fortify(TreeOrd)
+
+ForPlotting$label[1:15] <- plot_names
 ```
 Now we will make our plots from the new ForPlotting dataframe.
 
@@ -135,9 +143,10 @@ Run the code to create the plot called p1, then come back to this code chunk and
 p1<-ggplot()+
    geom_point(data = subset(ForPlotting, score =="sites"),
               mapping = aes(x = NMDS1, y = NMDS2, color = PlotInfo$Forest),
-              alpha = 0.8)+
+              alpha = 0.8,
+              size = 3)+
    #
-  geom_text_repel(data = subset(ForPlotting, score =="sites"), mapping = aes(x = NMDS1, y = NMDS2,label = PlotInfo$Plot))+
+  geom_text_repel(data = subset(ForPlotting, score =="sites"), mapping = aes(x = NMDS1, y = NMDS2,label = label))+
    #
    geom_segment(data=subset(ForPlotting, score == "species"),
                 mapping = aes(x = 0, y = 0, xend = NMDS1,   yend=NMDS2),
@@ -165,6 +174,8 @@ p1<-ggplot()+
    scale_color_discrete("Forest")
    #
 p1
+
+ggsave(here("Outputs", "Ord.1.png"), device = "png", width = 6, height = 4)
 ```
 And now let's make a second plot that shows the species locations. As before, run the code, examine the plot, see how it is different from p1 and then look at the code for p2 and compare it with the code for p1. Again make notes about how the plot code works by filling in text following the # symbols.
 
@@ -300,8 +311,10 @@ p3
 Now blend into a 3-piece plot
 
 ```{r}
-TreeIVOrdination1<-ggarrange(p1,p2,p3,ncol = 3)
+TreeIVOrdination1<-ggarrange(p2,p3,ncol = 2, widths = 6, heights = 4)
 TreeIVOrdination1
+
+ggsave(here("Outputs", "tree_enviro_ord.png"), device = "png", width = 6, height = 4)
 ```
 Or plot just sites and env vars together
 

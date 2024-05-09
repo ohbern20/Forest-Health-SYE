@@ -71,6 +71,7 @@ Both models produced statistically significant p-values.
 What if I found a mean canopy density (averaged from all canopy density measurements) for each plot and compared it to the mean bare ground for each plot. 
 ```{r}
 mean_bare <- gc_cd_df |> 
+  filter(Forest != "Black ash stand") |>
   group_by(Forest, Plot_num) |>
   summarise(mean_cover = mean(Percent_bare),
             mean_canopy = mean(Densiometer))
@@ -86,7 +87,7 @@ summary(mod3)
 
 Make a pretty graph
 ```{r}
-ggplot(data = mean_bare, aes(x = mean_canopy, y = mean_cover)) +
+canopy_ground_cover_plot <- ggplot(data = mean_bare, aes(x = mean_canopy, y = mean_cover)) +
   geom_point(aes(color = Forest, shape = Forest), size = 2) +
   theme_bw() +
   labs(title = "Effect of Canopy Density on Ground Cover",
@@ -94,6 +95,10 @@ ggplot(data = mean_bare, aes(x = mean_canopy, y = mean_cover)) +
        y = "Mean Bare Ground (%)") +
   geom_smooth(method = "lm") +
 scale_color_viridis_d()
+
+canopy_ground_cover_plot
+
+ggsave(here("Outputs", "canopy_groundcover.png"), device = "png", height = 4, width = 6)
 ```
 
 

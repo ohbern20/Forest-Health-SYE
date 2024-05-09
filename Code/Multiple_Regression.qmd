@@ -239,6 +239,8 @@ for_matrix <- DF |> select(-c(Forest, Plot_num))
 full_matrix <- cor(for_matrix)
 round(full_matrix, 3)
 
+full_matrix
+
 write.csv(full_matrix, here("Outputs", "Cor_matrix.csv"), row.names = FALSE)
 
 
@@ -305,31 +307,45 @@ subset_combine <- regsubsets(Shannon_trees ~ Shannon_mammals  + mean_squirrel_de
 
 ShowSubsets(subset_combine)
 
-#Cps are not as good
+
 ```
 
-So, going back to the plain forest model, I will see what happens if I add a mammal predictor to that model
+Run linear model with the results of best subsets from best of both
 ```{r}
-mod_forest_mammal <- lm(Shannon_trees ~ mNitrate + Shannon_regen + Mean_tree_density + Shannon_mammals, data = DF)
+two_subsets <- lm(Shannon_trees ~ Mean_tree_density + Shannon_regen + mNitrate  + mean_small_mammal_per100 + Shannon_mammals, data = DF)
 
-summary(mod_forest_mammal)
+summary(two_subsets)
+
+```
+
+
+Another method: 
+Going back to the plain forest model, I will see what happens if I add a mammal predictor to that model
+```{r}
+library(knitr)
+mod_forest_mammal <- lm(Shannon_trees ~  mNitrate + Shannon_regen + Mean_tree_density + Shannon_mammals, data = DF)
+
+tree_shannon_table <- summary(mod_forest_mammal)
+
+pretty_table <- kable(tree_shannon_table$coefficients)
 
 #with Shannon_mammals added, the p-value: 0.006754, Adjusted R-squared:  0.621 
 ```
 
-Run a stepwise regression on this combination of predictors to get AIC
+Run an AIC table to look at differences between mod_forest_mammal model and two_subsets model. 
+
+
 ```{r}
-mod_forest_mammal_step <- lm(Shannon_trees ~ mNitrate + Shannon_regen + Mean_tree_density + Shannon_mammals, data = DF)
+library(broom)
+#for calculating AIC
 
-step(mod_forest_mammal_step)
-
-#AIC = -39.64
-#I also notice that Shannon_mammals has a negative coefficient 
-
-
-#run AIC table on all best model options - AIC of less than 2 away from lowest is considered equivalent 
+p <- broom::glance(two_subsets)
+p[2,] <- broom::glance(mod_forest_mammal) 
 ```
 
+
+
+## regen density as response 
 
 Run another set of models with Regen Density as response variable (much more variation)
 

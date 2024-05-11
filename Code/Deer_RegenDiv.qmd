@@ -1,0 +1,58 @@
+---
+title: "Deer_Regen_Div"
+format: html
+---
+
+Deer and regen diversity - same method as deer and regen density 
+
+Pull in data
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(here)
+
+deer <- read.csv(here("Data", "deer_small_critter_abundance 1.csv"))
+regen <- read.csv(here("Data", "Cleaned", "regen_diversity_canopy_ground.csv"), stringsAsFactors = TRUE)
+```
+
+Filter regen div data
+```{r}
+regen <- regen |>
+  select(c("Forest", "Plot_num", "Shannon"))
+```
+
+
+
+Get deer data ready and then combine with regen shannon div index 
+```{r}
+deer_dens <- deer |>
+  filter(year == 2021) |>
+  select(-c("mean_squirrels__per_100_cam_nights", "mean_small_mammals_per_100_cam_nights", "year")) |>
+  mutate(forest_or_site_name = replace(forest_or_site_name, forest_or_site_name == 'Kip Tract', 'Kip'),
+         forest_or_site_name = replace(forest_or_site_name, forest_or_site_name == 'Peavine', 'Peavine Swamp'))
+
+
+
+#join the dataframes
+
+deer_regen <- full_join(regen, deer_dens, by = c("Forest" = "forest_or_site_name", "Plot_num" = "forest_ecology_plot_number"))
+
+```
+
+
+Now I will make a preliminary plot of the relationship between variables of interest
+```{r}
+ggplot(data = deer_regen, aes(x = mean_deer_per_100_cam_nights, y = Shannon, color = Forest, shape = Forest)) +
+  geom_point()+
+  scale_color_viridis_d()
+```
+
+
+Now, I will run a regression on deer density and regen diversity 
+```{r}
+mod1 <- lm(mean_deer_per_100_cam_nights ~ Shannon, data = deer_regen)
+summary(mod1)
+
+#p-value = 0.6881, 1 and 12 DF 
+```
+

@@ -326,6 +326,7 @@ library(knitr)
 mod_forest_mammal <- lm(Shannon_trees ~  mNitrate + Shannon_regen + Mean_tree_density + Shannon_mammals, data = DF)
 
 tree_shannon_table <- summary(mod_forest_mammal)
+tree_shannon_table
 
 pretty_table <- kable(tree_shannon_table$coefficients)
 
@@ -348,6 +349,138 @@ p[2,] <- broom::glance(mod_forest_mammal)
 ## regen density as response 
 
 Run another set of models with Regen Density as response variable (much more variation)
+
+Best subsets with just tree predictors 
+```{r}
+subset_regen <- regsubsets(Mean_regen_density ~  Shannon_trees + Mean_ground_cover + canopy_density + Mean_tree_density + Shannon_regen + mNitrate + mSOM + total_basal_m2 + median_basal_m2, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_regen)
+
+#best forest predictors (lowest cp) are median_basal_m2, mSOM, and mNitrate
+
+forest_mod <- lm(Mean_regen_density ~ median_basal_m2 + mSOM + mNitrate, data = DF)
+summary(forest_mod)
+```
+
+Best subsets with just mammal predictors 
+```{r}
+subset_mammal_regen <- regsubsets(Mean_regen_density ~ Shannon_mammals + mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_mammal_regen)
+
+#best predictor is mean_deer_density_per100 on it's own 
+
+mammal_mod <- lm(Mean_regen_density ~ mean_deer_density_per100, data = DF)
+summary(mammal_mod)
+#infignificnt 
+```
+
+Run best predictors together
+```{r}
+subset_full_regen <- regsubsets(Mean_regen_density ~  median_basal_m2 + mSOM + mNitrate + mean_deer_density_per100, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_full_regen)
+
+#best is mNitrate and median_basal_m2
+
+final_option <- lm(Mean_regen_density ~ mNitrate + median_basal_m2, data = DF)
+summary(final_option)
+```
+
+
+Second method: use forest model and add in strongest mammal predictor
+```{r}
+forest_mammal_mod <- lm(Mean_regen_density ~ median_basal_m2 + mSOM + mNitrate + mean_deer_density_per100, data = DF)
+
+summary(forest_mammal_mod)
+#this has a larger p-value than above 
+```
+
+
+```{r}
+library(broom)
+#for calculating AIC
+
+x <- broom::glance(final_option)
+x[2,] <- broom::glance(forest_mammal_mod) 
+```
+
+
+## 3rd model using regen div 
+
+Best subsets with just tree predictors 
+```{r}
+subset_regendiv <- regsubsets(Shannon_regen ~  Mean_regen_density + Shannon_trees + Mean_ground_cover + canopy_density + Mean_tree_density + mNitrate + mSOM + m_pH + mCEC + total_basal_m2 + median_basal_m2, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_regendiv)
+
+#best forest predictors (lowest cp) are mSOM + mNitrate + Mean_tree_density + Shannon_trees
+
+forest_moddiv <- lm(Shannon_regen ~ mSOM + mNitrate + Mean_tree_density + Shannon_trees, data = DF)
+summary(forest_moddiv)
+```
+
+
+Best subsets with just mammal predictors 
+```{r}
+subset_mammal_regendiv <- regsubsets(Shannon_regen ~  mean_deer_density_per100  + mean_squirrel_density_per100 + mean_small_mammal_per100 + Shannon_mammals, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_mammal_regendiv)
+
+#best predictor is Shannon_mammals on it's own 
+
+mammal_mod2 <- lm(Shannon_regen ~ Shannon_mammals, data = DF)
+summary(mammal_mod2)
+#infignificnt 
+```
+
+Run best predictors together
+```{r}
+subset_full_regendiv <- regsubsets(Shannon_regen ~  mSOM + mNitrate + Mean_tree_density + Shannon_trees + Shannon_mammals, data = DF, method = "forward", nvmax = 5)
+
+ShowSubsets(subset_full_regendiv)
+
+
+final_optiondiv <- lm(Shannon_regen ~ mSOM, data = DF)
+summary(final_optiondiv)
+
+
+#or, add best mammal predictor to best forest model
+
+option2_div <- lm(Shannon_regen ~ mSOM + mNitrate + Mean_tree_density + Shannon_trees + Shannon_mammals, data = DF)
+summary(option2_div)
+```
+
+
+```{r}
+library(broom)
+#for calculating AIC
+
+s <- broom::glance(final_optiondiv)
+s [2,] <- broom::glance(option2_div) 
+
+s
+```
+
+Plot 
+```{r}
+library(tidyverse)
+
+ggplot(data = DF, aes(x = mSOM, y = Shannon_regen)) +
+  geom_point(aes(color = Forest, shape = Forest)) +
+  geom_smooth(method = lm)
+
+soil <- read.csv(here("Data", "Cleaned", "EnviroVars2021.csv"))
+```
+
+## Response variable figure
+
+
+
+
+
+
+## Messing around 
 
 ```{r}
 subset_regen <- regsubsets(Mean_regen_density ~  Shannon_trees + Mean_ground_cover + canopy_density + Mean_tree_density + Shannon_regen + mCEC + mNitrate + total_basal_m2 + median_basal_m2 + Shannon_mammals + mean_deer_density_per100  + mCEC + mean_squirrel_density_per100 + mean_small_mammal_per100, data = DF, method = "forward", nvmax = 5)

@@ -1,0 +1,79 @@
+---
+title: "Species Summary Tables"
+format: html
+---
+
+```{r}
+rm(list = ls())
+library(tidyverse)
+library(here)
+
+df <- read.csv(here("Data", "Cleaned", "trees_17_21_clean.csv"))
+df_regen <- read.csv(here("Data", "Forest_Regeneration_17_21.csv"))
+```
+
+Make tree table
+```{r}
+trees <- df |>
+  filter(Year == 2021) |>
+  group_by(Forest, PlotNum) |>
+  summarise(species = unique(Common_name)) |>
+  ungroup() |>
+  group_by(Forest, species) |>
+  summarise(num_occurances = n())
+
+#pivot the dataframe
+
+trees_wide <- trees |>
+  pivot_wider(names_from = Forest, values_from = num_occurances)
+
+trees_wide[is.na(trees_wide)] <- 0
+
+
+print(tbl_df(trees_wide), n= 25)
+```
+
+Make a regen table
+```{r}
+regen <- df_regen |>
+  filter(Year == 2021,
+         Seed_Sap == "Sapling" | Seed_Sap == "Seedling") |>
+  group_by(Forest, PlotNum) |>
+  summarise(species = unique(common.name)) |>
+  ungroup() |>
+  group_by(Forest, species) |>
+  summarise(num_occurances = n())
+
+#pivot the dataframe
+
+regen_wide <- regen |>
+  pivot_wider(names_from = Forest, values_from = num_occurances) |>
+  mutate(species = ifelse(is.na(species), 'unknown', species))
+
+
+regen_wide[is.na(regen_wide)] <- 0
+```
+
+Make a mammal table
+```{r}
+mammal_df <- read.csv(here("Data", "mammal_diversity_summary.csv"))
+
+mammal <- mammal_df |>
+  group_by(forest_or_site_name, forest_ecology_plot_number) |>
+  summarise(species = unique(Final_choice)) |>
+  ungroup() |>
+  group_by(forest_or_site_name, species) |>
+  summarise(num_occurances = n())
+
+#pivot the dataframe
+
+mammal_wide <- mammal |>
+  pivot_wider(names_from = forest_or_site_name, values_from = num_occurances)
+
+mammal_wide[is.na(mammal_wide)] <- 0
+
+```
+
+
+
+

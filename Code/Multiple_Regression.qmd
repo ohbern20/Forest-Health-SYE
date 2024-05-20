@@ -324,6 +324,7 @@ Going back to the plain forest model, I will see what happens if I add a mammal 
 ```{r}
 library(knitr)
 mod_forest_mammal <- lm(Shannon_trees ~  mNitrate + Shannon_regen + Mean_tree_density + Shannon_mammals, data = DF)
+summary(mod_forest_mammal)
 
 tree_shannon_table <- summary(mod_forest_mammal)
 tree_shannon_table
@@ -474,9 +475,53 @@ soil <- read.csv(here("Data", "Cleaned", "EnviroVars2021.csv"))
 ```
 
 ## Response variable figure
+```{r}
+library(here)
+library(ggpubr)
+
+for_plotting <- DF |>
+  select(c(Forest, Plot_num, Shannon_trees, Mean_regen_density, Shannon_regen)) 
 
 
 
+for_plotting$measurement <- as.factor(for_plotting$measurement)
+
+
+
+p1 <- ggplot(data = for_plotting, aes(x = Forest, 
+                                y = Shannon_trees)) +
+  geom_boxplot() +
+  geom_point() +
+  labs(y = "Shannon Trees")
+
+
+p2 <- ggplot(data = for_plotting, aes(x = Forest, 
+                                y = Shannon_regen)) +
+  geom_boxplot() +
+  geom_point() +
+  labs(y = "Shannon Regen.")
+
+
+p3 <- ggplot(data = for_plotting, aes(x = Forest, 
+                                y = Mean_regen_density)) +
+  geom_boxplot() +
+  geom_point() +
+  labs(y = "Regen. Density")
+
+final_plot <- ggarrange(p1, p2, p3, nrow = 3, labels = "AUTO")
+
+final_plot
+
+ggsave(here("Outputs", "Response_plots.png"), device = "png", width = 5.5, height = 6)
+```
+
+
+
+## Running models on our forest data
+
+First, shannon div of trees model
+```{r}
+```
 
 
 
